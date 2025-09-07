@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>불량 발생 TAT 및 진행 현황</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#00a99d',secondary:'#f8f9fa'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            color: #2d1810;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #a8d8a8 0%, #90c695 100%);
+            color: #2d5a2d;
+            text-align: center;
+            padding: 20px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .charts-container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .chart-section {
+            flex: 1;
+            background: #ffffff;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+        
+        .table-container {
+            padding: 20px;
+            background: #ffffff;
+        }
+        
+        .table-sections {
+            border: 2px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table-headers {
+            display: flex;
+            background: #f8f9fa;
+        }
+        
+        .table-header {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            border-right: 1px solid #333;
+            font-size: 16px;
+        }
+        
+        .table-header:last-child {
+            border-right: none;
+        }
+        
+        .table-header.issue-info {
+            background: #e8f5e8;
+        }
+        
+        .table-header.containment {
+            background: #a8d8a8;
+        }
+        
+        .table-header.corrective {
+            background: #90c695;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th,
+        .data-table td {
+            border: 1px solid #333;
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            font-size: 10px;
+        }
+        
+        /* 섹션별 컬럼 구분 */
+        .data-table th:nth-child(6),
+        .data-table td:nth-child(6) {
+            border-right: 3px solid #333;
+        }
+        
+        .data-table th:nth-child(11),
+        .data-table td:nth-child(11) {
+            border-right: 3px solid #333;
+        }
+        
+        .data-table .wait-cell {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+        
+        .data-table .complete-cell {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .data-table .critical-cell {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .data-table .selected-cell {
+            background: #ff7675;
+            color: white;
+            border: 2px solid #d63031;
+        }
+        
+        .layout-indicator {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            background: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        
+        .data-section-indicator {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-size: 9px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        
+        .refresh-indicator {
+            position: absolute;
+            top: 5px;
+            left: 8px;
+            color: #28a745;
+            font-size: 12px;
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-wait {
+            background: #ffc107;
+        }
+        
+        .status-complete {
+            background: #28a745;
+        }
+        
+        .status-critical {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header - 파트 1 -->
+        <div class="header">
+            <div class="layout-indicator">파트 1</div>
+            불량 발생 TAT 및 진행 현황
+        </div>
+        
+        <!-- Charts Section - 파트 2 -->
+        <div class="charts-container">
+            <div class="data-section-indicator">파트 2</div>
+            
+            <!-- 월별 차트 -->
+            <div class="chart-section">
+                <div class="layout-indicator">2-1</div>
+                <div class="refresh-indicator">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 주별 차트 -->
+            <div class="chart-section">
+                <div class="layout-indicator">2-2</div>
+                <div class="refresh-indicator">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 일별 차트 -->
+            <div class="chart-section">
+                <div class="layout-indicator">2-3</div>
+                <div class="refresh-indicator">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Table Section - 파트 3 -->
+        <div class="table-container">
+            <div class="data-section-indicator">파트 3</div>
+            
+            <div class="table-sections">
+                <!-- 섹션 헤더 제거 - 테이블 자체에서 섹션 표시 -->
+                
+                <!-- Data Table -->
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <!-- Issue Information 섹션 (6개 컬럼) -->
+                            <th colspan="6" style="background: #e8f5e8; border: 2px solid #333; text-align: center; font-weight: bold;">Issue Information</th>
+                            <!-- Containment Actions & Root Cause 섹션 (5개 컬럼) -->
+                            <th colspan="5" style="background: #a8d8a8; border: 2px solid #333; text-align: center; font-weight: bold;">Containment Actions & Root Cause</th>
+                            <!-- Corrective Actions 섹션 (5개 컬럼) -->
+                            <th colspan="5" style="background: #90c695; border: 2px solid #333; text-align: center; font-weight: bold;">Corrective Actions</th>
+                        </tr>
+                        <tr>
+                            <!-- Issue Information 컬럼들 -->
+                            <th style="width: 80px; background: #f0f8f0;">발생 일자</th>
+                            <th style="width: 80px; background: #f0f8f0;">Risk Level</th>
+                            <th style="width: 70px; background: #f0f8f0;">Process</th>
+                            <th style="width: 100px; background: #f0f8f0;">불량 유형</th>
+                            <th style="width: 70px; background: #f0f8f0;">판정기준</th>
+                            <th style="width: 60px; background: #f0f8f0;">발생율</th>
+                            
+                            <!-- Containment Actions & Root Cause 컬럼들 -->
+                            <th style="width: 50px; background: #d4edda;">T.A.T</th>
+                            <th style="width: 60px; background: #d4edda;">범위</th>
+                            <th style="width: 60px; background: #d4edda;">원인</th>
+                            <th style="width: 70px; background: #d4edda;">Lot Hold</th>
+                            <th style="width: 70px; background: #d4edda;">M/C stop</th>
+                            
+                            <!-- Corrective Actions 컬럼들 -->
+                            <th style="width: 50px; background: #c3e6cb;">T.A.T</th>
+                            <th style="width: 60px; background: #c3e6cb;">대책</th>
+                            <th style="width: 60px; background: #c3e6cb;">검증</th>
+                            <th style="width: 70px; background: #c3e6cb;">Report</th>
+                            <th style="width: 50px; background: #c3e6cb;">T.A.T</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <!-- 샘플 데이터 - 실제 데이터 연동 시 동적 생성 예정 -->
+                        <!-- 데이터 행 1 -->
+                        <tr onclick="selectRow(this)">
+                            <!-- Issue Information (3-1) -->
+                            <td class="data-section-indicator" style="position: relative;">
+                                <div class="layout-indicator">3-1</div>
+                                2025.07.11
+                            </td>
+                            <td class="critical-cell">critical</td>
+                            <td>4800</td>
+                            <td class="wait-cell">wait</td>
+                            <td>ABN</td>
+                            <td>2.30%</td>
+                            
+                            <!-- Containment Actions & Root Cause (3-2) -->
+                            <td style="position: relative;">
+                                <div class="layout-indicator">3-2</div>
+                                2.1
+                            </td>
+                            <td>2lot</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            
+                            <!-- Corrective Actions (3-3) -->
+                            <td style="position: relative;">
+                                <div class="layout-indicator">3-3</div>
+                                2.5
+                            </td>
+                            <td class="complete-cell">YES</td>
+                            <td class="complete-cell">YES</td>
+                            <td class="wait-cell">wait</td>
+                            <td>3.2</td>
+                        </tr>
+                        
+                        <!-- 데이터 행 2 -->
+                        <tr onclick="selectRow(this)">
+                            <!-- Issue Information -->
+                            <td class="data-section-indicator" style="position: relative;">
+                                <div class="layout-indicator">3-1-2</div>
+                                2025.07.12
+                            </td>
+                            <td class="critical-cell">critical</td>
+                            <td>4801</td>
+                            <td>Probe Damage</td>
+                            <td>ABN</td>
+                            <td>2.30%</td>
+                            
+                            <!-- Containment Actions & Root Cause -->
+                            <td>2.1</td>
+                            <td>3lot</td>
+                            <td>UTSC33</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="complete-cell">Yes</td>
+                            
+                            <!-- Corrective Actions -->
+                            <td>-</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td>-</td>
+                        </tr>
+                        
+                        <!-- 데이터 행 3 - 선택된 행 -->
+                        <tr onclick="selectRow(this)" class="selected-row">
+                            <!-- Issue Information -->
+                            <td class="data-section-indicator" style="position: relative;">
+                                <div class="layout-indicator">3-1-3</div>
+                                2025.07.12
+                            </td>
+                            <td class="critical-cell">critical</td>
+                            <td>4801</td>
+                            <td>Probe Damage</td>
+                            <td>ABN</td>
+                            <td>2.30%</td>
+                            
+                            <!-- Containment Actions & Root Cause -->
+                            <td>2.1</td>
+                            <td>3lot</td>
+                            <td>UTSC33</td>
+                            <td class="selected-cell">미진행<br>발생</td>
+                            <td class="selected-cell">RPA 자동<br>Stop<br>Yes</td>
+                            
+                            <!-- Corrective Actions -->
+                            <td>-</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="selected-cell">미진행 발달<br>wait</td>
+                            <td>-</td>
+                        </tr>
+                        
+                        <!-- 데이터 행 4 -->
+                        <tr onclick="selectRow(this)">
+                            <!-- Issue Information -->
+                            <td class="data-section-indicator" style="position: relative;">
+                                <div class="layout-indicator">3-1-4</div>
+                                2025.07.12
+                            </td>
+                            <td class="critical-cell">critical</td>
+                            <td>4801</td>
+                            <td>Probe Damage</td>
+                            <td>ABN</td>
+                            <td>2.30%</td>
+                            
+                            <!-- Containment Actions & Root Cause -->
+                            <td>2.1</td>
+                            <td>3lot</td>
+                            <td>UTSC33</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="complete-cell">Yes</td>
+                            
+                            <!-- Corrective Actions -->
+                            <td>-</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td>-</td>
+                        </tr>
+                        
+                        <!-- 데이터 행 5 -->
+                        <tr onclick="selectRow(this)">
+                            <!-- Issue Information -->
+                            <td class="data-section-indicator" style="position: relative;">
+                                <div class="layout-indicator">3-1-5</div>
+                                2025.07.12
+                            </td>
+                            <td class="critical-cell">critical</td>
+                            <td>4801</td>
+                            <td>Probe Damage</td>
+                            <td>ABN</td>
+                            <td>2.30%</td>
+                            
+                            <!-- Containment Actions & Root Cause -->
+                            <td>2.1</td>
+                            <td>3lot</td>
+                            <td>UTSC33</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="complete-cell">Yes</td>
+                            
+                            <!-- Corrective Actions -->
+                            <td>-</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td>-</td>
+                        </tr>
+                        
+                        <!-- 데이터 행 6 -->
+                        <tr onclick="selectRow(this)">
+                            <!-- Issue Information -->
+                            <td class="data-section-indicator" style="position: relative;">
+                                <div class="layout-indicator">3-1-6</div>
+                                2025.07.12
+                            </td>
+                            <td class="critical-cell">critical</td>
+                            <td>4801</td>
+                            <td>Probe Damage</td>
+                            <td>ABN</td>
+                            <td>2.30%</td>
+                            
+                            <!-- Containment Actions & Root Cause -->
+                            <td>2.1</td>
+                            <td>3lot</td>
+                            <td>UTSC33</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="complete-cell">Yes</td>
+                            
+                            <!-- Corrective Actions -->
+                            <td>-</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td class="wait-cell">wait</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 데이터 관리 섹션 (D1, D2) ==========
+        
+        // 차트 데이터 - 실제 연동 시 Excel/DB에서 로드 예정
+        const chartData = {
+            monthly: {
+                labels: ['6월', '7월', '8월'],
+                defectCounts: [10, 12, 10],
+                tatValues: [3.3, 2.1, 4.5]
+            },
+            weekly: {
+                labels: ['29주', '30주', '31주'],
+                defectCounts: [3, 2, 5],
+                tatValues: [3.2, 3.5, 4]
+            },
+            daily: {
+                labels: ['25일', '26일', '27일', '28일', '29일', '30일'],
+                defectCounts: [0, 0, 1, 2, 1, 4],
+                tatValues: [0, 0, 4.5, 3.1, 2, 6.5]
+            }
+        };
+        
+        // 테이블 데이터 - 실제 연동 시 Excel/DB에서 로드 예정
+        let tableData = [
+            {
+                date: '2025.07.11',
+                riskLevel: 'critical',
+                process: '4800',
+                defectType: 'wait',
+                criterion: 'ABN',
+                rate: '2.30%',
+                tat1: '2.1',
+                scope: '2lot',
+                cause: 'wait',
+                lotHold: 'wait',
+                mcStop: 'wait',
+                tat2: '2.5',
+                action: 'YES',
+                verification: 'YES',
+                report: 'wait',
+                tat3: '3.2'
+            }
+            // 추가 데이터는 실제 연동 시 동적으로 로드
+        ];
+        
+        // ========== 차트 생성 함수들 (C1, C2, C3) ==========
+        
+        function createChart(canvasId, data, title) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: '발생횟수(회)',
+                            data: data.defectCounts,
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            type: 'line',
+                            label: 'TAT(Day)',
+                            data: data.tatValues,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderWidth: 3,
+                            fill: false,
+                            yAxisID: 'y1',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false
+                        },
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '발생횟수(회)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'TAT(Day)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    },
+                    onClick: function(event, elements) {
+                        if (elements.length > 0) {
+                            const elementIndex = elements[0].index;
+                            const label = data.labels[elementIndex];
+                            console.log(`차트 클릭: ${title} - ${label}`);
+                            // 실제 연동 시 해당 기간의 상세 데이터를 테이블에 표시
+                            filterTableByPeriod(title, label);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ========== 테이블 관리 함수들 (T1, T2, T3) ==========
+        
+        function selectRow(row) {
+            // 이전 선택 해제
+            document.querySelectorAll('.data-table tr').forEach(tr => {
+                tr.classList.remove('selected-row');
+            });
+            
+            // 새로운 행 선택
+            row.classList.add('selected-row');
+            
+            // 선택된 행의 데이터 로그
+            const cells = row.getElementsByTagName('td');
+            console.log('선택된 행 데이터:', {
+                date: cells[0].textContent.trim(),
+                riskLevel: cells[1].textContent.trim(),
+                process: cells[2].textContent.trim()
+            });
+            
+            // 실제 연동 시 선택된 행의 상세 정보를 다른 페이지로 전달
+        }
+        
+        function filterTableByPeriod(chartType, period) {
+            console.log(`테이블 필터링: ${chartType} - ${period}`);
+            // 실제 연동 시 해당 기간의 데이터만 테이블에 표시
+            // updateTableData(filteredData);
+        }
+        
+        function updateTableData(data) {
+            const tbody = document.getElementById('dataTableBody');
+            // 실제 연동 시 새로운 데이터로 테이블 업데이트
+            console.log('테이블 데이터 업데이트:', data);
+        }
+        
+        // ========== 실시간 업데이트 함수 ==========
+        
+        function refreshData() {
+            console.log('데이터 새로고침 시작...');
+            
+            // 실제 연동 시 Excel/DB에서 최신 데이터 로드
+            // const newData = await loadLatestData();
+            
+            // 차트 업데이트
+            updateCharts();
+            
+            // 테이블 업데이트  
+            updateTable();
+            
+            console.log('데이터 새로고침 완료');
+        }
+        
+        function updateCharts() {
+            // 실제 연동 시 차트 데이터 업데이트
+            console.log('차트 업데이트 중...');
+            
+            // 예시: monthlyChart.data.datasets[0].data = newData.monthly.defectCounts;
+            // monthlyChart.update();
+        }
+        
+        function updateTable() {
+            // 실제 연동 시 테이블 데이터 업데이트
+            console.log('테이블 업데이트 중...');
+        }
+        
+        // ========== 초기화 및 이벤트 리스너 ==========
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // 차트 생성 (C1, C2, C3)
+            const monthlyChart = createChart('monthlyChart', chartData.monthly, '월별');
+            const weeklyChart = createChart('weeklyChart', chartData.weekly, '주별');  
+            const dailyChart = createChart('dailyChart', chartData.daily, '일별');
+            
+            console.log('TAT 페이지 초기화 완료');
+            console.log('레이아웃 파트 구조:');
+            console.log('파트 1: 헤더 영역');
+            console.log('파트 2: 차트 영역 (2-1: 월별, 2-2: 주별, 2-3: 일별)');
+            console.log('파트 3: 테이블 영역');
+            console.log('  3-1: Issue Information (6개 컬럼)');
+            console.log('  3-2: Containment Actions & Root Cause (5개 컬럼)'); 
+            console.log('  3-3: Corrective Actions (5개 컬럼)');
+            console.log('  3-1-1~3-1-6: 테이블 각 행 데이터');
+            
+            // 실시간 업데이트 (30초마다)하
+            setInterval(refreshData, 30000);
+        });
+        
+        // ========== 개발용 헬퍼 함수들 ==========
+        
+        function showLayoutGuide() {
+            const indicators = document.querySelectorAll('.layout-indicator, .data-section-indicator');
+            indicators.forEach(indicator => {
+                indicator.style.background = 'rgba(255, 0, 0, 0.3)';
+                indicator.style.color = 'red';
+                indicator.style.fontWeight = 'bold';
+            });
+            setTimeout(() => {
+                indicators.forEach(indicator => {
+                    indicator.style.background = 'rgba(108, 117, 125, 0.1)';
+                    indicator.style.color = '#6c757d';
+                    indicator.style.fontWeight = 'bold';
+                });
+            }, 3000);
+        }
+        
+        function hideLayoutGuide() {
+            const indicators = document.querySelectorAll('.layout-indicator, .data-section-indicator');
+            indicators.forEach(indicator => {ㅁ
+                indicator.style.display = 'none';
+            });
+        }
+        
+        // 콘솔에서 사용 가능한 개발 명령어
+        console.log('개발 명령어:');
+        console.log('showLayoutGuide() - 레이아웃 가이드 강조 표시');
+        console.log('hideLayoutGuide() - 레이아웃 가이드 숨김');
+        console.log('refreshData() - 수동 데이터 새로고침');
+    </script>
+</body>
+</html>

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Information - Detail</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#00a99d',secondary:'#f8f9fa'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Malgun Gothic', 'Microsoft YaHei', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            color: #2d1810;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #a8d8a8 0%, #82c882 100%);
+            color: #2d5a2d;
+            text-align: center;
+            padding: 20px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .nav-btn {
+            padding: 10px 20px;
+            background: #a8d8a8;
+            color: #2d5a2d;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-family: 'Malgun Gothic', Arial, sans-serif;
+        }
+        
+        .nav-btn:hover {
+            background: #82c882;
+            transform: translateY(-2px);
+        }
+        
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 2px solid #333;
+            font-family: 'Malgun Gothic', Arial, sans-serif;
+        }
+        
+        .summary-table th,
+        .summary-table td {
+            border: 1px solid #333;
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .summary-table th {
+            background: #c8e6c9;
+            color: #2d5a2d;
+        }
+        
+        .summary-table td {
+            background: #f1f8e9;
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .chart-section {
+            background: #ffffff;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .chart-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #2d5a2d;
+            font-family: 'Malgun Gothic', Arial, sans-serif;
+        }
+        
+        .chart-canvas {
+            position: relative;
+            height: 300px;
+        }
+        
+        .analysis-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px;
+            border: 2px solid #333;
+            border-radius: 8px;
+        }
+        
+        .analysis-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #2d5a2d;
+            text-align: center;
+            font-family: 'Malgun Gothic', Arial, sans-serif;
+        }
+        
+        .analysis-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            background: #e8f5e8;
+            border-radius: 8px;
+            font-weight: bold;
+            font-family: 'Malgun Gothic', Arial, sans-serif;
+        }
+        
+        .analysis-arrow {
+            margin-right: 10px;
+            color: #666;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .history-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #333;
+            font-family: 'Malgun Gothic', Arial, sans-serif;
+        }
+        
+        .history-table th,
+        .history-table td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .history-table th {
+            background: #a8d8a8;
+            font-weight: bold;
+            color: #2d5a2d;
+        }
+        
+        .history-table td {
+            background: #f8f9fa;
+        }
+        
+        .history-title {
+            text-align: center;
+            font-weight: bold;
+            background: #a8d8a8;
+            color: #2d5a2d;
+            padding: 10px;
+            margin: 0;
+            font-family: 'Malgun Gothic', Arial, sans-serif;
+        }
+        
+        @media (max-width: 1200px) {
+            .charts-container,
+            .history-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            Issue Information
+        </div>
+        
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="navigateTo('Main_One.html')">불량현황 등록</button>
+            <button class="nav-btn" onclick="navigateTo('Issue_Info1.html')">Issue Information</button>
+            <button class="nav-btn" onclick="navigateTo('Containmente_Actions.html')">Containment Actions</button>
+            <button class="nav-btn" onclick="navigateTo('Report.html')">Corrective Actions</button>
+            <button class="nav-btn" onclick="navigateTo('TAT.html')">이력확인</button>
+        </div>
+        
+        <!-- Summary Table -->
+        <div style="padding: 20px;">
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>Device</th>
+                        <th>LOT No</th>
+                        <th>공정</th>
+                        <th>불량명</th>
+                        <th>판정기준</th>
+                        <th>발생율</th>
+                        <th>불량 수량</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>S5E9955B01-NYZ</td>
+                        <td>A3ZY11</td>
+                        <td>4700</td>
+                        <td>Probe Damage</td>
+                        <td>ABN</td>
+                        <td>2.8%</td>
+                        <td>#01 / 47ea<br>#04 / 51ea</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Charts Container -->
+        <div class="charts-container">
+            <!-- 설비별 발생 수량 Chart -->
+            <div class="chart-section">
+                <div class="chart-title">설비별 발생 수량</div>
+                <div class="chart-canvas">
+                    <canvas id="equipmentChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 카드별 발생 수량 Chart -->
+            <div class="chart-section">
+                <div class="chart-title">카드별 발생 수량</div>
+                <div class="chart-canvas">
+                    <canvas id="cardChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analysis Section -->
+        <div class="analysis-section">
+            <div class="analysis-title">이력 분석 결과</div>
+            <div class="analysis-item">
+                <span class="analysis-arrow">&gt;</span>
+                <span>설비 : UTSC56 발생 빈도 상승</span>
+            </div>
+            <div class="analysis-item">
+                <span class="analysis-arrow">&gt;</span>
+                <span>카드 : 9955-003 발생 빈도 상승</span>
+            </div>
+            <div class="analysis-item">
+                <span class="analysis-arrow">&gt;</span>
+                <span>이력 : 6/25 이후 변경 점 검토</span>
+            </div>
+        </div>
+        
+        <!-- History Tables -->
+        <div class="history-container">
+            <!-- M/C History -->
+            <div>
+                <div class="history-title">M/C History</div>
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>M/C No.</th>
+                            <th>Process No.</th>
+                            <th>Event</th>
+                            <th>Log</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>UTSC01</td>
+                            <td>L1</td>
+                            <td>BM</td>
+                            <td>Sanding Paper 교체</td>
+                        </tr>
+                        <tr>
+                            <td>UTSC21</td>
+                            <td>L2</td>
+                            <td>PM</td>
+                            <td>Monthly PM</td>
+                        </tr>
+                        <tr>
+                            <td>UTSC56</td>
+                            <td>L1</td>
+                            <td>BM</td>
+                            <td>Chuck 교체</td>
+                        </tr>
+                        <tr>
+                            <td>UTSC56</td>
+                            <td>L2</td>
+                            <td>PM</td>
+                            <td>Weekly PM</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Probe Card History -->
+            <div>
+                <div class="history-title">Probe Card History</div>
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>P/C No.</th>
+                            <th>Process No.</th>
+                            <th>Event</th>
+                            <th>Log</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>9665-001</td>
+                            <td>L1</td>
+                            <td></td>
+                            <td>정기점검</td>
+                        </tr>
+                        <tr>
+                            <td>9665-001</td>
+                            <td>L1</td>
+                            <td></td>
+                            <td>Burnt 점검</td>
+                        </tr>
+                        <tr>
+                            <td>9955-001</td>
+                            <td>L2</td>
+                            <td></td>
+                            <td>카드 교체</td>
+                        </tr>
+                        <tr>
+                            <td>9955-003</td>
+                            <td>L1</td>
+                            <td></td>
+                            <td>Needle 교체</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation function
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+        
+        // Chart initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            createEquipmentChart();
+            createCardChart();
+        });
+        
+        // 설비별 발생 수량 차트
+        function createEquipmentChart() {
+            const ctx = document.getElementById('equipmentChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['6/21', '6/22', '6/23', '6/24', '6/25'],
+                    datasets: [
+                        {
+                            label: 'UTSC21',
+                            data: [3, 4, 3, 1, 0],
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'UTSC41',
+                            data: [2, 3, 2, 1, 0],
+                            borderColor: '#FF9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'UTSC56',
+                            data: [1, 2, 3, 20, 20],
+                            borderColor: '#2E7D32',
+                            backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 25
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 카드별 발생 수량 차트
+        function createCardChart() {
+            const ctx = document.getElementById('cardChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['6/21', '6/22', '6/23', '6/24', '6/25'],
+                    datasets: [
+                        {
+                            label: '9955-001',
+                            data: [3, 4, 3, 1, 2],
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: '9955-002',
+                            data: [4, 5, 4, 2, 2],
+                            borderColor: '#FF9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: '9955-003',
+                            data: [2, 3, 1, 20, 20],
+                            borderColor: '#2E7D32',
+                            backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 25
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

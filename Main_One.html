@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Point System - Quality Automation Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Malgun Gothic', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8BC34A 0%, #689F38 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .header h2 {
+            font-size: 18px;
+            font-weight: normal;
+            opacity: 0.9;
+        }
+
+        .main-layout {
+            display: flex;
+            min-height: calc(100vh - 120px);
+        }
+
+        .sidebar {
+            width: 240px;
+            background: linear-gradient(145deg, #f4f6f8 0%, #e8eaed 50%, #f1f3f5 100%);
+            border-right: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 
+                6px 0 24px rgba(0,0,0,0.04),
+                2px 0 8px rgba(0,0,0,0.02),
+                inset -1px 0 0 rgba(255,255,255,0.5);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(to bottom, 
+                transparent 0%, 
+                rgba(45, 55, 72, 0.1) 50%, 
+                transparent 100%);
+        }
+
+        .nav-item {
+            padding: 18px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2d3748;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+            margin: 3px 12px;
+            border-radius: 10px;
+            letter-spacing: 0.2px;
+            line-height: 1.4;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
+            border-radius: 10px;
+            transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 0;
+            box-shadow: 
+                0 4px 12px rgba(43, 108, 176, 0.15),
+                0 2px 4px rgba(43, 108, 176, 0.1);
+        }
+
+        .nav-item:hover {
+            color: white;
+            transform: translateX(2px);
+            font-weight: 600;
+        }
+
+        .nav-item:hover::before {
+            width: 100%;
+        }
+
+        .nav-item:hover .nav-icon {
+            transform: scale(1.05);
+        }
+
+        .nav-item.active {
+            color: white;
+            font-weight: 600;
+            transform: translateX(2px);
+        }
+
+        .nav-item.active::before {
+            width: 100%;
+        }
+
+        .nav-item.active .nav-icon {
+            transform: scale(1.05);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+
+        .nav-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
+            opacity: 0.85;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-item:hover .nav-icon svg,
+        .nav-item.active .nav-icon svg {
+            opacity: 1;
+        }
+
+        .nav-text {
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .nav-item:hover .nav-text,
+        .nav-item.active .nav-text {
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 20px;
+        }
+
+        .chart-container {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafb 100%);
+            border-radius: 20px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.1),
+                0 10px 20px rgba(0,0,0,0.06),
+                inset 0 1px 0 rgba(255,255,255,0.7),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #8BC34A);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.15),
+                0 15px 30px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.8),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+            position: relative;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .chart-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #8BC34A);
+            border-radius: 2px;
+        }
+
+        .trend-chart {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .pie-chart {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .bottom-charts {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+        }
+
+        .chart-canvas {
+            flex: 1;
+            min-height: 300px;
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .bottom-chart-canvas {
+            min-height: 250px;
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #666;
+            font-size: 16px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            border-radius: 10px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .status-info {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            text-align: center;
+            color: #666;
+        }
+
+        /* 차트별 개별 색상 테마 */
+        .trend-chart .chart-container::before {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .pie-chart .chart-container::before {
+            background: linear-gradient(90deg, #764ba2, #8BC34A);
+        }
+
+        .bottom-charts .chart-container:nth-child(1)::before {
+            background: linear-gradient(90deg, #F18F01, #FF6B35);
+        }
+
+        .bottom-charts .chart-container:nth-child(2)::before {
+            background: linear-gradient(90deg, #2E86AB, #41A3DE);
+        }
+
+        .bottom-charts .chart-container:nth-child(3)::before {
+            background: linear-gradient(90deg, #E91E63, #FF4081);
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                overflow-x: auto;
+                border-right: none;
+                border-bottom: 1px solid rgba(0,0,0,0.06);
+                background: linear-gradient(145deg, #f4f6f8 0%, #e8eaed 100%);
+                padding: 8px 0;
+            }
+            
+            .nav-item {
+                white-space: nowrap;
+                min-width: 180px;
+                margin: 0 6px;
+                padding: 14px 20px;
+                border-right: none;
+            }
+            
+            .nav-text {
+                font-size: 13px;
+            }
+            
+            .nav-icon {
+                width: 18px;
+                height: 18px;
+            }
+            
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+            
+            .trend-chart {
+                grid-column: 1;
+                grid-row: 1;
+            }
+            
+            .pie-chart {
+                grid-column: 1;
+                grid-row: 2;
+            }
+            
+            .bottom-charts {
+                grid-column: 1;
+                grid-row: 3;
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                padding: 6px 0;
+            }
+            
+            .nav-item {
+                min-width: 140px;
+                padding: 12px 16px;
+                margin: 0 4px;
+            }
+            
+            .nav-text {
+                font-size: 12px;
+            }
+            
+            .nav-icon {
+                width: 16px;
+                height: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>One Point System</h1>
+        <h2>Quality Automation Management System</h2>
+    </div>
+
+    <div class="main-layout">
+        <!-- 좌측 네비게이션 -->
+        <div class="sidebar">
+            <div class="nav-item active" data-page="main">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                    </svg>
+                </div>
+                <span class="nav-text">불량 현황</span>
+            </div>
+            <div class="nav-item" data-page="issue">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Issue 현황</span>
+            </div>
+            <div class="nav-item" data-page="issue-info">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Issue Information</span>
+            </div>
+            <div class="nav-item" data-page="containment">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Containment Actions & Root Cause</span>
+            </div>
+            <div class="nav-item" data-page="corrective">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
+                    </svg>
+                </div>
+                <span class="nav-text">Corrective Actions</span>
+            </div>
+            <div class="nav-item" data-page="stakeholder">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                    </svg>
+                </div>
+                <span class="nav-text">이력확인</span>
+            </div>
+        </div>
+
+        <!-- 메인 컨텐츠 영역 -->
+        <div class="container">
+            <!-- 월별 불량률 트렌드 차트 -->
+            <div class="chart-container trend-chart">
+                <div class="chart-title">TEST 공정 기간별 불량현황 (신규구성)</div>
+                <div class="status-info">Nepes Ark OGI 불량 Status</div>
+                <div class="chart-canvas">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 불량 유형 분포 파이 차트 -->
+            <div class="chart-container pie-chart">
+                <div class="chart-title">불량 유형 분포</div>
+                <div class="chart-canvas">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 하단 Top3 발생량 상세 차트들 -->
+            <div class="bottom-charts">
+                <div class="chart-container">
+                    <div class="chart-title">Burnt</div>
+                    <div class="bottom-chart-canvas">
+                        <canvas id="burntChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Probe Damage</div>
+                    <div class="bottom-chart-canvas">
+                        <canvas id="probeDamageChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Particle</div>
+                    <div class="bottom-chart-canvas">
+                        <canvas id="particleChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let excelData = [];
+        let charts = {};
+
+        // 색상 팔레트 (이미지와 동일한 색상)
+        const colors = {
+            probemark: '#2E86AB',    // 파란색 (Probemark Damage 33%)
+            burnt: '#F18F01',       // 주황색 (Burnt - 큰 비중)
+            scratch: '#4CAF50',     // 녹색 (Scratch 11%)
+            broken: '#87CEEB',      // 하늘색 (Broken 6%)
+            particle: '#E91E63',    // 핑크색 (Particle 14%)
+            others: '#6B7280'       // 회색
+        };
+
+        // 임시 데이터 생성 (이미지 기반)
+        function generateMockData() {
+            return [
+                { '날짜': '25년 06월 10일', 'EQP_ID': 'S5E8535', 'PROBE_DAMAGE': 33, 'BURNT': 36, 'PATTERN_DAMAGE': 11, 'BUMP_DAMAGE': 6, 'RAW_MATERIAL': 14, 'CUR_QTY': 2500 },
+                { '날짜': '25년 07월 15일', 'EQP_ID': 'S5E8845', 'PROBE_DAMAGE': 30, 'BURNT': 38, 'PATTERN_DAMAGE': 12, 'BUMP_DAMAGE': 5, 'RAW_MATERIAL': 15, 'CUR_QTY': 2300 },
+                { '날짜': '25년 08월 20일', 'EQP_ID': 'S5E5535', 'PROBE_DAMAGE': 35, 'BURNT': 34, 'PATTERN_DAMAGE': 10, 'BUMP_DAMAGE': 7, 'RAW_MATERIAL': 14, 'CUR_QTY': 2800 },
+                { '날짜': '25년 29월 25일', 'EQP_ID': 'S6M5525', 'PROBE_DAMAGE': 32, 'BURNT': 40, 'PATTERN_DAMAGE': 9, 'BUMP_DAMAGE': 6, 'RAW_MATERIAL': 13, 'CUR_QTY': 3000 },
+                { '날짜': '25년 26월 30일', 'EQP_ID': 'S5E8535', 'PROBE_DAMAGE': 28, 'BURNT': 42, 'PATTERN_DAMAGE': 13, 'BUMP_DAMAGE': 4, 'RAW_MATERIAL': 13, 'CUR_QTY': 3200 },
+                { '날짜': '25년 27월 05일', 'EQP_ID': 'S5E8845', 'PROBE_DAMAGE': 31, 'BURNT': 39, 'PATTERN_DAMAGE': 11, 'BUMP_DAMAGE': 5, 'RAW_MATERIAL': 14, 'CUR_QTY': 2900 },
+                { '날짜': '25년 28월 10일', 'EQP_ID': 'S5E5535', 'PROBE_DAMAGE': 34, 'BURNT': 35, 'PATTERN_DAMAGE': 12, 'BUMP_DAMAGE': 6, 'RAW_MATERIAL': 13, 'CUR_QTY': 2600 },
+                { '날짜': '25년 29월 15일', 'EQP_ID': 'S6M5525', 'PROBE_DAMAGE': 29, 'BURNT': 41, 'PATTERN_DAMAGE': 10, 'BUMP_DAMAGE': 7, 'RAW_MATERIAL': 13, 'CUR_QTY': 3500 },
+                { '날짜': '25년 30월 20일', 'EQP_ID': 'S5E8535', 'PROBE_DAMAGE': 33, 'BURNT': 37, 'PATTERN_DAMAGE': 11, 'BUMP_DAMAGE': 5, 'RAW_MATERIAL': 14, 'CUR_QTY': 3800 }
+            ];
+        }
+
+        // 차트 기본 설정
+        Chart.defaults.font.family = 'Arial, Malgun Gothic, sans-serif';
+        Chart.defaults.font.size = 11;
+        
+        // 메탈릭 3D 효과를 위한 색상 팔레트 재정의
+        const metallicColors = {
+            probemark: 'linear-gradient(135deg, #4B79A1, #283E51)',    // 메탈릭 블루
+            burnt: 'linear-gradient(135deg, #904e95, #e96443)',       // 메탈릭 코퍼
+            scratch: 'linear-gradient(135deg, #56ab2f, #a8e063)',     // 메탈릭 그린
+            broken: 'linear-gradient(135deg, #2193b0, #6dd5ed)',      // 메탈릭 실버
+            particle: 'linear-gradient(135deg, #cb356b, #bd3f32)',    // 메탈릭 레드
+            others: 'linear-gradient(135deg, #666666, #424242)'       // 메탈릭 그레이
+        };
+
+        // --- 메탈릭 3D 렌더링 플러그인 ---
+        // 바 차트: 클리핑 영역 관리 및 z-index 순서 보장
+        // 파이 차트: 레이어 겹침 최적화 및 안티앨리어싱 처리
+        // 메탈릭 효과를 위한 유틸리티 함수
+        function createMetallicGradient(ctx, x1, y1, x2, y2, baseColor) {
+            const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+            // 메탈릭한 광택 효과
+            gradient.addColorStop(0, shadeColor(baseColor, 0.4));    // 하이라이트
+            gradient.addColorStop(0.3, baseColor);                   // 기본 색상
+            gradient.addColorStop(0.6, shadeColor(baseColor, -0.1)); // 중간 음영
+            gradient.addColorStop(1, shadeColor(baseColor, -0.3));   // 그림자
+            return gradient;
+        }
+
+        function createMetallicBevelEffect(ctx, path, baseColor) {
+            // 메탈릭한 베벨 효과
+            ctx.save();
+            ctx.strokeStyle = shadeColor(baseColor, 0.5);
+            ctx.lineWidth = 2;
+            ctx.stroke(path);
+            ctx.strokeStyle = shadeColor(baseColor, -0.3);
+            ctx.lineWidth = 1;
+            ctx.stroke(path);
+            ctx.restore();
+        }
+
+        const threeDPlugin = {
+            id: 'threeDPlugin',
+            beforeDatasetsDraw(chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+
+                // 파이/도넛 차트의 메탈릭 3D 레이어
+                if (chart.config.type === 'pie' || chart.config.type === 'doughnut') {
+                    const meta = chart.getDatasetMeta(0);
+                    if (!meta || !meta.data) return;
+
+                    const centerX = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
+                    const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2;
+                    const radius = Math.min(
+                        (chart.chartArea.right - chart.chartArea.left) / 2,
+                        (chart.chartArea.bottom - chart.chartArea.top) / 2
+                    );
+                    const thickness = Math.max(6, Math.round(radius / 15)); // 더 두꺼운 메탈릭 효과
+
+                    // 메탈릭 베이스 레이어 (전체)
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY + thickness, radius, 0, Math.PI * 2);
+                    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 4;
+                    // 메탈릭한 베이스 그라데이션
+                    const baseGrad = ctx.createRadialGradient(
+                        centerX - radius/3, centerY - radius/3, 0,
+                        centerX, centerY + thickness, radius
+                    );
+                    baseGrad.addColorStop(0, 'rgba(255,255,255,0.15)');
+                    baseGrad.addColorStop(0.5, 'rgba(150,150,150,0.1)');
+                    baseGrad.addColorStop(1, 'rgba(0,0,0,0.2)');
+                    ctx.fillStyle = baseGrad;
+                    ctx.fill();
+                    ctx.restore();
+
+                    // 각 조각의 메탈릭 3D 레이어
+                    meta.data.forEach((el, idx) => {
+                        const baseColor = chart.data.datasets[0].backgroundColor[idx] || '#666';
+                        
+                        // 깊이감 있는 메탈릭 레이어 스택
+                        for (let step = thickness; step >= 0; step -= 1) {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(el.x, el.y + step, el.outerRadius, el.startAngle, el.endAngle);
+                            if (chart.config.type === 'doughnut' && el.innerRadius > 0) {
+                                ctx.arc(el.x, el.y + step, el.innerRadius, el.endAngle, el.startAngle, true);
+                            } else {
+                                ctx.lineTo(el.x, el.y + step);
+                            }
+                            ctx.closePath();
+                            
+                            // 메탈릭 그라데이션 효과
+                            const angleCenter = (el.startAngle + el.endAngle) / 2;
+                            const gradX1 = el.x + Math.cos(angleCenter) * el.outerRadius * 0.7;
+                            const gradY1 = el.y + Math.sin(angleCenter) * el.outerRadius * 0.7;
+                            const gradX2 = el.x + Math.cos(angleCenter + Math.PI) * el.outerRadius * 0.7;
+                            const gradY2 = el.y + Math.sin(angleCenter + Math.PI) * el.outerRadius * 0.7;
+                            
+                            const metallicGrad = createMetallicGradient(
+                                ctx, gradX1, gradY1, gradX2, gradY2,
+                                shadeColor(baseColor, -step/thickness * 0.2)
+                            );
+                            ctx.fillStyle = metallicGrad;
+                            
+                            // 메탈릭 엣지 효과
+                            ctx.strokeStyle = shadeColor(baseColor, 0.3 - (step/thickness * 0.5));
+                            ctx.lineWidth = 0.8;
+                            
+                            ctx.fill();
+                            ctx.stroke();
+                            
+                            // 광택 효과
+                            if (step === 0) {
+                                const shine = ctx.createLinearGradient(
+                                    el.x - el.outerRadius, el.y - el.outerRadius,
+                                    el.x + el.outerRadius, el.y + el.outerRadius
+                                );
+                                shine.addColorStop(0, 'rgba(255,255,255,0.2)');
+                                shine.addColorStop(0.5, 'rgba(255,255,255,0)');
+                                shine.addColorStop(1, 'rgba(255,255,255,0.1)');
+                                ctx.fillStyle = shine;
+                                ctx.fill();
+                            }
+                            
+                            ctx.restore();
+                        }
+                    });
+                }
+            },
+            afterDatasetsDraw(chart) {
+                const ctx = chart.ctx;
+                
+                // 바 차트 3D 효과
+                if (chart.config.type === 'bar') {
+                    chart.data.datasets.forEach((dataset, dIdx) => {
+                        const meta = chart.getDatasetMeta(dIdx);
+                        if (!meta || !meta.data) return;
+
+                        // 깊이와 크기 계산 최적화
+                        const chartArea = chart.chartArea;
+                        const depth = Math.max(3, Math.min(
+                            Math.round((chartArea.right - chartArea.left) / 60),
+                            Math.round((chartArea.bottom - chartArea.top) / 60)
+                        ));
+
+                        meta.data.forEach((el, i) => {
+                            if (!el || typeof el.x === 'undefined') return; // 유효성 검사 추가
+                            
+                            const color = Array.isArray(dataset.backgroundColor) ? 
+                                dataset.backgroundColor[i] : dataset.backgroundColor;
+                            
+                            // 치수 계산 개선
+                            const width = el.width || Math.abs(el.base - el.x) || 10;
+                            const halfW = width / 2;
+                            const left = el.x - halfW;
+                            const right = el.x + halfW;
+                            const top = Math.min(el.y, el.base);
+                            const bottom = Math.max(el.y, el.base);
+
+                            ctx.save();
+                            
+                            // 측면 (오른쪽)
+                            if (bottom > top) { // 높이가 있는 경우만
+                                ctx.beginPath();
+                                ctx.moveTo(right, top);
+                                ctx.lineTo(right + depth, top + depth);
+                                ctx.lineTo(right + depth, bottom + depth);
+                                ctx.lineTo(right, bottom);
+                                ctx.closePath();
+                                ctx.fillStyle = shadeColor(color, -0.15);
+                                ctx.fill();
+                                
+                                // 측면 하이라이트
+                                const sideGrad = ctx.createLinearGradient(
+                                    right, top,
+                                    right + depth, top + depth
+                                );
+                                sideGrad.addColorStop(0, 'rgba(255,255,255,0.1)');
+                                sideGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                                ctx.fillStyle = sideGrad;
+                                ctx.fill();
+                            }
+
+                            // 상단면 (밝은 부분)
+                            if (top !== bottom) { // 높이가 있는 경우만
+                                ctx.beginPath();
+                                ctx.moveTo(left, top);
+                                ctx.lineTo(left + depth, top + depth);
+                                ctx.lineTo(right + depth, top + depth);
+                                ctx.lineTo(right, top);
+                                ctx.closePath();
+                                ctx.fillStyle = shadeColor(color, 0.12);
+                                ctx.fill();
+                                
+                                // 상단 하이라이트
+                                const topGrad = ctx.createLinearGradient(
+                                    left, top,
+                                    left + depth, top + depth
+                                );
+                                topGrad.addColorStop(0, 'rgba(255,255,255,0.2)');
+                                topGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                                ctx.fillStyle = topGrad;
+                                ctx.fill();
+                            }
+
+                            ctx.restore();
+                        });
+                    });
+                }
+
+                // 파이 차트 마무리 (상단 하이라이트)
+                if (chart.config.type === 'pie' || chart.config.type === 'doughnut') {
+                    const meta = chart.getDatasetMeta(0);
+                    if (meta && meta.data) {
+                        meta.data.forEach((el, idx) => {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(el.x, el.y, el.outerRadius, el.startAngle, el.endAngle);
+                            // 개선된 하이라이트
+                            const grad = ctx.createLinearGradient(
+                                el.x, el.y - el.outerRadius,
+                                el.x, el.y + el.outerRadius
+                            );
+                            grad.addColorStop(0, 'rgba(255,255,255,0.15)');
+                            grad.addColorStop(0.5, 'rgba(255,255,255,0)');
+                            grad.addColorStop(1, 'rgba(0,0,0,0.05)');
+                            ctx.strokeStyle = grad;
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                            ctx.restore();
+                        });
+                    }
+                }
+            }
+        };
+
+        // 색상 밝기/어둡게 조절(단순 RGB 기반)
+        function shadeColor(inputColor, percent) {
+            // 허용 형식: '#rrggbb' 또는 'rgb(...)' 또는 'rgba(...)'
+            try {
+                let r, g, b, a = 1;
+                if (inputColor.startsWith('#')) {
+                    const hex = inputColor.replace('#','');
+                    r = parseInt(hex.substring(0,2),16);
+                    g = parseInt(hex.substring(2,4),16);
+                    b = parseInt(hex.substring(4,6),16);
+                } else if (inputColor.startsWith('rgb')) {
+                    const parts = inputColor.replace(/rgba?|\(|\)|\s/g,'').split(',');
+                    r = parseInt(parts[0]); g = parseInt(parts[1]); b = parseInt(parts[2]);
+                    if (parts.length === 4) a = parseFloat(parts[3]);
+                } else {
+                    // fallback gray
+                    r = g = b = 120;
+                }
+
+                const factor = 1 + percent; // percent는 -0.2 ~ +0.2
+                r = Math.min(255, Math.max(0, Math.round(r * factor)));
+                g = Math.min(255, Math.max(0, Math.round(g * factor)));
+                b = Math.min(255, Math.max(0, Math.round(b * factor)));
+                return `rgba(${r}, ${g}, ${b}, ${a})`;
+            } catch (e) {
+                return inputColor;
+            }
+        }
+
+        // 플러그인 등록
+        Chart.register(threeDPlugin);
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('One Point System 대시보드 로드 시작');
+            
+            try {
+                // 먼저 임시 데이터로 차트 표시
+                excelData = generateMockData();
+                console.log('임시 데이터로 차트 초기화');
+                initializeCharts();
+                
+                // 백그라운드에서 실제 Excel 데이터 로드 시도
+                try {
+                    if (window.electronAPI) {
+                        await loadExcelData();
+                        console.log('실제 Excel 데이터 로드 성공, 차트 업데이트');
+                        updateCharts();
+                    }
+                } catch (excelError) {
+                    console.log('Excel 데이터 로드 실패, 임시 데이터 유지:', excelError.message);
+                }
+                
+                setupDataUpdates();
+            } catch (error) {
+                console.error('대시보드 초기화 오류:', error);
+                showError('데이터 로드 중 오류가 발생했습니다.');
+            }
+        });
+
+        // Excel 데이터 로드
+        async function loadExcelData() {
+            try {
+                console.log('Excel 데이터 로드 중...');
+                excelData = await window.electronAPI.readExcelFile('OnePointRaw.xlsx');
+                console.log('Excel 데이터 로드 완료:', excelData.length, '건');
+                return excelData;
+            } catch (error) {
+                console.error('Excel 데이터 로드 실패:', error);
+                throw error;
+            }
+        }
+
+        // 월별 데이터 집계
+        function aggregateMonthlyData(data) {
+            const monthlyData = {};
+            
+            data.forEach(row => {
+                // 날짜에서 월 추출
+                const dateStr = row['날짜'];
+                let monthKey;
+                
+                if (dateStr && dateStr.includes('월')) {
+                    const monthMatch = dateStr.match(/(\d+)월/);
+                    if (monthMatch) {
+                        monthKey = monthMatch[1] + '월';
+                    }
+                } else {
+                    // 임시 데이터의 경우 간단한 월 구분
+                    const month = Math.floor(Math.random() * 5) + 6; // 6-10월
+                    monthKey = month + '월';
+                }
+                
+                if (!monthKey) return;
+                
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = {
+                        probemark_damage: 0,
+                        burnt: 0,
+                        scratch: 0,
+                        broken: 0,
+                        particle: 0,
+                        others: 0,
+                        total: 0
+                    };
+                }
+                
+                // 불량 유형별 집계
+                monthlyData[monthKey].probemark_damage += (row.PROBE_DAMAGE || 0);
+                monthlyData[monthKey].burnt += (row.BURNT || 0);
+                monthlyData[monthKey].scratch += (row.PATTERN_DAMAGE || 0);
+                monthlyData[monthKey].broken += (row.BUMP_DAMAGE || 0);
+                monthlyData[monthKey].particle += (row.RAW_MATERIAL || 0);
+                monthlyData[monthKey].others += 5; // 기타 불량들
+                monthlyData[monthKey].total += (row.CUR_QTY || 1000);
+            });
+            
+            return monthlyData;
+        }
+
+        // 전체 불량 유형 분포 계산
+        function calculateDefectDistribution(data) {
+            const totals = {
+                probemark_damage: 0,
+                burnt: 0,
+                scratch: 0,
+                broken: 0,
+                particle: 0,
+                others: 0
+            };
+            
+            data.forEach(row => {
+                totals.probemark_damage += (row.PROBE_DAMAGE || 0);
+                totals.burnt += (row.BURNT || 0);
+                totals.scratch += (row.PATTERN_DAMAGE || 0);
+                totals.broken += (row.BUMP_DAMAGE || 0);
+                totals.particle += (row.RAW_MATERIAL || 0);
+                totals.others += 5; // 기타 불량들
+            });
+            
+            return totals;
+        }
+
+        // 장비별 데이터 집계
+        function aggregateByEquipment(data, defectType) {
+            const equipmentData = {};
+            
+            data.forEach(row => {
+                const eqpId = row.EQP_ID || 'Unknown';
+                if (!equipmentData[eqpId]) {
+                    equipmentData[eqpId] = {
+                        total: 0,
+                        defects: 0
+                    };
+                }
+                
+                equipmentData[eqpId].total += (row.CUR_QTY || 1000);
+                
+                // 불량 유형에 따른 데이터 추가
+                switch(defectType) {
+                    case 'burnt':
+                        equipmentData[eqpId].defects += (row.BURNT || 0);
+                        break;
+                    case 'probe_damage':
+                        equipmentData[eqpId].defects += (row.PROBE_DAMAGE || 0);
+                        break;
+                    case 'particle':
+                        equipmentData[eqpId].defects += (row.RAW_MATERIAL || 0);
+                        break;
+                }
+            });
+            
+            return equipmentData;
+        }
+
+        // 차트 초기화
+        function initializeCharts() {
+            console.log('차트 초기화 시작');
+            
+            // 월별 트렌드 차트
+            createTrendChart();
+            
+            // 파이 차트
+            createPieChart();
+            
+            // 하단 상세 차트들
+            createDetailChart('burntChart', 'burnt', 'Burnt');
+            createDetailChart('probeDamageChart', 'probe_damage', 'Probe Damage');
+            createDetailChart('particleChart', 'particle', 'Particle');
+        }
+
+        // 월별 트렌드 스택 바 차트 생성
+        function createTrendChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            const monthlyData = aggregateMonthlyData(excelData);
+            
+            const months = ['6월', '7월', '8월', '29월', '30월']; // 기본 월 데이터
+            const datasets = [
+                {
+                    label: 'Probemark Damage',
+                    data: [2.8, 3.2, 4.1, 4.9, 5.8],
+                    backgroundColor: colors.probemark,
+                    borderWidth: 0
+                },
+                {
+                    label: 'Burnt',
+                    data: [3.5, 3.8, 4.2, 4.6, 5.2],
+                    backgroundColor: colors.burnt,
+                    borderWidth: 0
+                },
+                {
+                    label: 'Scratch',
+                    data: [1.2, 1.8, 2.1, 2.8, 3.2],
+                    backgroundColor: colors.scratch,
+                    borderWidth: 0
+                },
+                {
+                    label: 'Broken',
+                    data: [0.8, 1.2, 1.5, 1.8, 2.1],
+                    backgroundColor: colors.broken,
+                    borderWidth: 0
+                },
+                {
+                    label: 'Particle',
+                    data: [1.5, 2.1, 2.8, 3.2, 3.8],
+                    backgroundColor: colors.particle,
+                    borderWidth: 0
+                }
+            ];
+
+            charts.trendChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            max: 12,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            },
+                            grid: {
+                                color: '#e5e7eb'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 파이 차트 생성
+        function createPieChart() {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            
+            // 이미지와 동일한 비율로 설정
+            const data = [33, 36, 11, 6, 14]; // Probemark Damage 33%, Burnt 36%, Scratch 11%, Broken 6%, Particle 14%
+            const labels = ['Probemark Damage', 'Burnt', 'Scratch', 'Broken', 'Particle'];
+            const backgroundColors = [
+                colors.probemark,
+                colors.burnt,
+                colors.scratch,
+                colors.broken,
+                colors.particle
+            ];
+
+            charts.pieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 11
+                                },
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    return data.labels.map((label, index) => {
+                                        const value = data.datasets[0].data[index];
+                                        return {
+                                            text: `${label} ${value}%`,
+                                            fillStyle: data.datasets[0].backgroundColor[index],
+                                            hidden: false,
+                                            index: index
+                                        };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 상세 차트 생성 (장비별)
+        function createDetailChart(canvasId, defectType, title) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            // 임시 장비별 데이터
+            let labels, data, backgroundColor;
+            
+            switch(defectType) {
+                case 'burnt':
+                    labels = ['S5E8535', 'S5E8845', 'S5E5535', 'S6M5525', 'Spec'];
+                    data = [2.8, 3.2, 2.5, 3.8, 2.1];
+                    backgroundColor = colors.burnt;
+                    break;
+                case 'probe_damage':
+                    labels = ['S5E8535', 'S5E8845', 'S5E5535', 'S6M5525', 'Spec'];
+                    data = [3.5, 3.1, 2.8, 4.2, 2.5];
+                    backgroundColor = colors.probemark;
+                    break;
+                case 'particle':
+                    labels = ['S5E8535', 'S5E8845', 'S5E5535', 'S6M5525', 'Spec'];
+                    data = [1.5, 1.8, 1.2, 2.1, 3.0];
+                    backgroundColor = colors.particle;
+                    break;
+                default:
+                    labels = [];
+                    data = [];
+                    backgroundColor = colors.others;
+            }
+
+            charts[canvasId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: title,
+                        data: data,
+                        backgroundColor: backgroundColor,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                },
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                color: '#e5e7eb'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 실시간 데이터 업데이트 설정
+        function setupDataUpdates() {
+            // 30초마다 데이터 새로고침 (실제 환경에서만)
+            if (window.electronAPI) {
+                setInterval(async () => {
+                    try {
+                        console.log('데이터 업데이트 중...');
+                        await loadExcelData();
+                        updateCharts();
+                    } catch (error) {
+                        console.error('데이터 업데이트 오류:', error);
+                    }
+                }, 30000);
+            }
+        }
+
+        // 차트 업데이트
+        function updateCharts() {
+            console.log('차트 업데이트 중...');
+            
+            // 기존 차트 제거
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            
+            // 차트 재생성
+            initializeCharts();
+        }
+
+        // 오류 표시
+        function showError(message) {
+            const containers = document.querySelectorAll('.chart-canvas, .bottom-chart-canvas');
+            containers.forEach(container => {
+                container.innerHTML = `<div class="loading">${message}</div>`;
+            });
+        }
+
+        // 네비게이션 클릭 이벤트 핸들러
+        function setupNavigation() {
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const page = this.getAttribute('data-page');
+                    
+                    // 모든 nav-item에서 active 클래스 제거
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    
+                    // 클릭된 항목에 active 클래스 추가
+                    this.classList.add('active');
+                    
+                    // 페이지 이동
+                    switch(page) {
+                        case 'main':
+                            // 현재 페이지 (불량 현황)
+                            break;
+                        case 'issue':
+                            window.location.href = 'Issue_Info1.html';
+                            break;
+                        case 'issue-info':
+                            window.location.href = 'Issue_Info1.html';
+                            break;
+                        case 'containment':
+                            window.location.href = 'Containmente_Actions.html';
+                            break;
+                        case 'corrective':
+                            window.location.href = 'Report.html';
+                            break;
+                        case 'stakeholder':
+                            window.location.href = 'TAT.html';
+                            break;
+                    }
+                });
+            });
+        }
+
+        // Window resize 이벤트 핸들러
+        window.addEventListener('resize', () => {
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.resize();
+            });
+        });
+
+        // 네비게이션 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            setupNavigation();
+        });
+    </script>
+</body>
+</html>
