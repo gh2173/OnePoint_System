@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Containment Actions & Root Cause</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#00a99d',secondary:'#f8f9fa'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            color: #2d1810;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4a4a4a 0%, #333333 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .content-area {
+            display: flex;
+            min-height: 800px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            background: #f8f9fa;
+            border-right: 2px solid #dee2e6;
+            padding: 20px;
+        }
+        
+        .right-panel {
+            flex: 1;
+            background: #ffffff;
+            padding: 20px;
+        }
+        
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            border: 2px solid #333;
+        }
+        
+        .info-table th,
+        .info-table td {
+            border: 1px solid #333;
+            padding: 8px 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .info-table th {
+            background: #e9ecef;
+        }
+        
+        .info-table .highlight {
+            background: #fff3cd;
+        }
+        
+        .section-box {
+            border: 2px solid #333;
+            margin-bottom: 20px;
+            background: #ffffff;
+        }
+        
+        .section-title {
+            background: #e9ecef;
+            padding: 10px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            text-align: center;
+        }
+        
+        .section-content {
+            padding: 15px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .checkbox-item.checked {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        
+        .comment-box {
+            width: 100%;
+            height: 60px;
+            border: 2px solid #333;
+            padding: 10px;
+            font-size: 14px;
+            resize: vertical;
+            background: #ffffff;
+        }
+        
+        .root-cause-section {
+            border: 2px solid #333;
+            background: #ffffff;
+        }
+        
+        .root-cause-header {
+            background: #e9ecef;
+            padding: 12px;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 2px solid #333;
+        }
+        
+        .root-cause-content {
+            padding: 0;
+        }
+        
+        .root-cause-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .root-cause-table th,
+        .root-cause-table td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .root-cause-table th {
+            background: #a8d8a8;
+        }
+        
+        .root-cause-table .category-header {
+            background: #90c695;
+            font-weight: bold;
+        }
+        
+        .defect-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .defect-table th,
+        .defect-table td {
+            border: 1px solid #333;
+            padding: 6px 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .defect-table th {
+            background: #e9ecef;
+            font-weight: bold;
+        }
+        
+        .defect-table .green-cell {
+            background: #d4edda;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-save {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-edit {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.8;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #ffffff;
+        }
+
+        /* Tab Navigation Styles */
+        .tabs-container {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            padding: 0;
+        }
+        
+        .tabs {
+            display: flex;
+            max-width: 100%;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            font-weight: bold;
+            border-right: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #e9ecef;
+        }
+        
+        .tab:last-child {
+            border-right: none;
+        }
+        
+        .tab.active {
+            background: #a8d8a8;
+            color: #2d5a2d;
+        }
+        
+        .tab:hover {
+            background: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            Containment Actions & Root Cause
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <div class="tab" onclick="switchTab('defect-registration')">불량현황 등록</div>
+                <div class="tab" onclick="switchTab('issue-information')">Issue Information</div>
+                <div class="tab active" onclick="switchTab('containment-actions')">Containment Actions & Root Cause</div>
+                <div class="tab" onclick="switchTab('corrective-actions')">Corrective Actions</div>
+            </div>
+        </div>
+        
+        <!-- Device Information Table - 전체 상단에 배치 -->
+        <!-- TODO: DB 연동 시 데이터 동적 로드 예정 -->
+        <div style="padding: 20px; background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>Device</th>
+                        <th>LOT No</th>
+                        <th>공정</th>
+                        <th>불량명</th>
+                        <th>판정기준</th>
+                        <th>발생율</th>
+                        <th>불량 수량</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>S5E9955B01-NYZ</td>
+                        <td>A3ZY11</td>
+                        <td>4700</td>
+                        <td class="highlight">Probe Damage</td>
+                        <td>ABN</td>
+                        <td>2.8%</td>
+                        <td>#01 / 47ea<br>#04 / 51ea</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="content-area">
+            <!-- Left Panel -->
+            <div class="left-panel">
+                
+                <!-- 발생 범위 Section -->
+                <div class="section-box">
+                    <div class="section-title">발생 범위</div>
+                    <div class="section-content">
+                        <div class="checkbox-group">
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="lot1" checked>
+                                <label for="lot1">1lot</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="lot2" checked>
+                                <label for="lot2">2lot</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="lot3" checked>
+                                <label for="lot3">3lot</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="manual">
+                                <label for="manual">수기입력</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px; display: none;"></i>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="file-input">
+                                <label for="file-input">입력</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px; display: none;"></i>
+                            </div>
+                        </div>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="confirm" checked>
+                                <label for="confirm">확인 중</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="equipment-lot">
+                                <label for="equipment-lot">설비 Lot</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px; display: none;"></i>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="occurrence">
+                                <label for="occurrence">발생</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px; display: none;"></i>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="non-occurrence">
+                                <label for="non-occurrence">미발생</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px; display: none;"></i>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="abnormal">
+                                <label for="abnormal">이상형</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px; display: none;"></i>
+                            </div>
+                        </div>
+                        <textarea class="comment-box" placeholder="수기 코멘트 입력" id="manual-comment"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Lot 처리 Section -->
+                <div class="section-box">
+                    <div class="section-title">Lot 처리</div>
+                    <div class="section-content">
+                        <div class="checkbox-group">
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="eng-hold" checked>
+                                <label for="eng-hold">Eng'r Hold</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="abn-hold" checked>
+                                <label for="abn-hold">ABN Hold</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="isolate" checked>
+                                <label for="isolate">지침대기</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                        </div>
+                        <textarea class="comment-box" placeholder="수기 코멘트 입력" id="lot-comment"></textarea>
+                    </div>
+                </div>
+                
+                <!-- 설비 처리 Section -->
+                <div class="section-box">
+                    <div class="section-title">설비 처리</div>
+                    <div class="section-content">
+                        <div class="checkbox-group">
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="bm" checked>
+                                <label for="bm">BM</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="eng-use" checked>
+                                <label for="eng-use">Eng'r 사용</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                            <div class="checkbox-item checked">
+                                <input type="checkbox" id="conversion" checked>
+                                <label for="conversion">Conversion</label>
+                                <i class="fas fa-check check-icon" style="color: green; margin-left: 5px;"></i>
+                            </div>
+                        </div>
+                        <textarea class="comment-box" placeholder="수기 코멘트 입력" id="equipment-comment"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel -->
+            <div class="right-panel">
+                <!-- Root Cause Section -->
+                <div class="root-cause-section">
+                    <div class="root-cause-header">Root Cause</div>
+                    <div class="root-cause-content">
+                        <!-- TODO: DB 연동 시 동적 데이터 로드 예정 -->
+                        <table class="root-cause-table">
+                            <thead>
+                                <tr>
+                                    <th class="category-header">불량 유형</th>
+                                    <th class="category-header">불량 위치<br>(Wafer 기준)</th>
+                                    <th class="category-header">Particle</th>
+                                    <th class="category-header">설비 진행</th>
+                                    <th class="category-header">카드진행</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Scratch</td>
+                                    <td>All 발생</td>
+                                    <td>유동성</td>
+                                    <td>단수</td>
+                                    <td>복수</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div style="display: flex; margin-top: 10px;">
+                            <div style="flex: 1; background: #4CAF50; color: white; padding: 15px; text-align: center; font-weight: bold; margin-right: 5px;">
+                                장비
+                            </div>
+                            <div style="flex: 1; background: #9E9E9E; color: white; padding: 15px; text-align: center; font-weight: bold; margin-right: 5px;">
+                                카드
+                            </div>
+                            <div style="flex: 1; background: #9E9E9E; color: white; padding: 15px; text-align: center; font-weight: bold;">
+                                제품
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; margin-top: 5px;">
+                            <div style="flex: 1; background: #f0f0f0; padding: 30px; text-align: center; margin-right: 5px; border: 1px solid #ccc;">
+                                <strong>UTS21</strong>
+                            </div>
+                            <div style="flex: 1; background: #f0f0f0; padding: 30px; text-align: center; margin-right: 5px; border: 1px solid #ccc;">
+                                <strong>9665-001</strong>
+                            </div>
+                            <div style="flex: 1; background: #f0f0f0; padding: 30px; text-align: center; border: 1px solid #ccc;">
+                                <strong>E1T9665</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 조치 방법 Table -->
+                <div style="margin-top: 20px;">
+                    <div style="background: #e9ecef; padding: 10px; font-weight: bold; text-align: center; border: 2px solid #333; border-bottom: 1px solid #333;">
+                        조치 방법
+                    </div>
+                    <!-- TODO: DB 연동 시 동적 데이터 로드 예정 -->
+                    <table class="defect-table">
+                        <thead>
+                            <tr>
+                                <th>Scratch/Broken/Burnt</th>
+                                <th>Machine</th>
+                                <th>Slot전치 Sensor 불량</th>
+                                <th>Corr. 1Hr 점검 후 정시 Report</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="green-cell">Scratch/Broken/Burnt</td>
+                                <td>Machine</td>
+                                <td>Driver Fail</td>
+                                <td>Spare 교체 및 현재 Strip Swap 점검</td>
+                            </tr>
+                            <tr>
+                                <td class="green-cell">Scratch/Broken/Burnt</td>
+                                <td>Machine</td>
+                                <td>Belt / Belt 불량</td>
+                                <td>김태 청소 Part 교체 및 축속</td>
+                            </tr>
+                            <tr>
+                                <td class="green-cell">Scratch/Broken/Burnt</td>
+                                <td>Machine</td>
+                                <td>Wafer Un/Loading Position 불량</td>
+                                <td>Un/Loading Position Re-setup</td>
+                            </tr>
+                            <tr>
+                                <td class="green-cell">Scratch/Broken/Burnt</td>
+                                <td>Machine</td>
+                                <td>Chuck 3-Pin 불량</td>
+                                <td>3PIN Height Re-setup 및 교체</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <!-- TODO: 저장/수정 기능 구현 예정 -->
+            <button class="btn btn-save" onclick="saveData()">저장</button>
+            <button class="btn btn-edit" onclick="editData()">수정</button>
+        </div>
+    </div>
+
+    <script>
+        // TODO: DB 연동 시 실제 데이터 처리 함수들 구현 예정
+        
+        // 체크박스 상태 변경 처리
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            
+            // 초기 로드 시 체크 아이콘 표시/숨김 설정
+            checkboxes.forEach(checkbox => {
+                updateCheckIcon(checkbox);
+            });
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const container = this.closest('.checkbox-item');
+                    if (this.checked) {
+                        container.classList.add('checked');
+                    } else {
+                        container.classList.remove('checked');
+                    }
+                    
+                    // 체크 아이콘 표시/숨김 업데이트
+                    updateCheckIcon(this);
+                    
+                    // TODO: 실제 기능 구현 시 데이터 저장/처리 로직 추가
+                    console.log(`Checkbox ${this.id} changed to: ${this.checked}`);
+                });
+            });
+            
+            // 텍스트 박스 변경 처리
+            const textareas = document.querySelectorAll('textarea');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', function() {
+                    // TODO: 실제 기능 구현 시 데이터 저장 로직 추가
+                    console.log(`Comment changed in ${this.id}: ${this.value}`);
+                });
+            });
+        });
+        
+        // 체크 아이콘 표시/숨김 업데이트 함수
+        function updateCheckIcon(checkbox) {
+            const container = checkbox.closest('.checkbox-item');
+            const checkIcon = container.querySelector('.check-icon');
+            
+            if (checkIcon) {
+                if (checkbox.checked) {
+                    checkIcon.style.display = 'inline';
+                } else {
+                    checkIcon.style.display = 'none';
+                }
+            }
+        }
+        
+        // 저장 기능 (추후 구현 예정)
+        function saveData() {
+            // TODO: 실제 저장 로직 구현
+            console.log('저장 기능 - 추후 구현 예정');
+            
+            // 현재 입력된 데이터 수집
+            const formData = {
+                occurrenceRange: getCheckboxData('occurrence-range'),
+                lotProcessing: getCheckboxData('lot-processing'),
+                equipmentProcessing: getCheckboxData('equipment-processing'),
+                comments: {
+                    manual: document.getElementById('manual-comment').value,
+                    lot: document.getElementById('lot-comment').value,
+                    equipment: document.getElementById('equipment-comment').value
+                }
+            };
+            
+            console.log('수집된 데이터:', formData);
+            alert('저장되었습니다. (실제 저장 기능은 추후 구현 예정)');
+        }
+        
+        // 수정 기능 (추후 구현 예정)
+        function editData() {
+            // TODO: 실제 수정 로직 구현
+            console.log('수정 기능 - 추후 구현 예정');
+            alert('수정 모드가 활성화되었습니다. (실제 수정 기능은 추후 구현 예정)');
+        }
+        
+        // 체크박스 데이터 수집 헬퍼 함수
+        function getCheckboxData(section) {
+            const checkboxes = document.querySelectorAll(`#${section} input[type="checkbox"]`);
+            const data = {};
+            checkboxes.forEach(checkbox => {
+                data[checkbox.id] = checkbox.checked;
+            });
+            return data;
+        }
+        
+        // 초기 데이터 로드 (추후 DB 연동 시 구현)
+        function loadInitialData() {
+            // TODO: DB에서 데이터 로드
+            console.log('초기 데이터 로드 - 추후 DB 연동 시 구현 예정');
+        }
+        
+        // Tab Navigation 함수
+        function switchTab(tabName) {
+            console.log(`Switching to tab: ${tabName}`);
+            
+            // 모든 탭의 active 클래스 제거
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 클릭된 탭에 active 클래스 추가
+            event.target.classList.add('active');
+            
+            // 페이지 이동
+            switch(tabName) {
+                case 'defect-registration':
+                    // 불량현황 등록 페이지로 이동
+                    window.location.href = 'Main_One.html';
+                    break;
+                case 'issue-information':
+                    // Issue Information 페이지로 이동
+                    window.location.href = 'Issue_Info1.html';
+                    break;
+                case 'containment-actions':
+                    // 현재 페이지 (Containment Actions & Root Cause)
+                    break;
+                case 'corrective-actions':
+                    // Corrective Actions 페이지로 이동 (추후 연결)
+                    console.log('Corrective Actions 페이지로 이동 - 추후 구현 예정');
+                    break;
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+            loadInitialData();
+        });
+    </script>
+</body>

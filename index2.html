@@ -1,0 +1,2217 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - OnePoint Report</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#00a99d',secondary:'#f8f9fa'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Mermaid 라이브러리 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <!-- PDF 생성을 위한 라이브러리들 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
+            color: #2d1810;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, #ff7043 0%, #ff5722 50%, #e64a19 100%);
+            box-shadow: 0 4px 20px rgba(255, 112, 67, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .card {
+            background: linear-gradient(135deg, #ffffff 0%, #fff8f5 100%);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(255, 138, 76, 0.1);
+            border: 1px solid #ffe0cc;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(255, 138, 76, 0.2);
+            border-color: #ffcc99;
+        }
+
+        .menu-item {
+            transition: all 0.3s ease;
+        }
+        
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+          .active-menu {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-left: 4px solid white;        }
+
+        /* 다크모드 스타일 */
+        .dark {
+            background-color: #1e293b !important;
+            color: #e2e8f0;
+        }
+          .dark .sidebar {
+            background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+        }
+
+        /* 메인 콘텐츠 영역 다크모드 */
+        .dark #mainContent {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+            color: #e2e8f0 !important;
+        }
+
+        /* Tailwind 클래스 덮어쓰기 */
+        .dark .bg-gradient-to-br {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+        }
+
+        .dark .from-orange-50 {
+            background: none !important;
+        }
+
+        .dark .to-amber-50 {
+            background: none !important;
+        }        .dark .text-gray-800 {
+            color: #e2e8f0 !important;
+        }
+
+        .dark .text-gray-600 {
+            color: #94a3b8 !important;
+        }
+
+        /* 라이트 모드에서 텍스트 색상 강제 지정 */
+        body:not(.dark) .text-gray-800 {
+            color: #1f2937 !important;
+        }
+
+        body:not(.dark) .text-gray-600 {
+            color: #4b5563 !important;
+        }
+
+        body:not(.dark) h1 {
+            color: #1f2937 !important;
+        }
+
+        body:not(.dark) p {
+            color: #4b5563 !important;
+        }
+
+        .dark .card {
+            background: #334155 !important;
+            background-image: none !important;
+            color: #e2e8f0 !important;
+            border: 1px solid #475569 !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        }        .dark .analytics-chart {
+            background: #334155;            color: #e2e8f0;
+        }
+
+        /* 다크모드 토글 스위치 스타일 */
+        .dark-mode-toggle {
+            background: #374151;
+            border-radius: 50px;
+            width: 60px;
+            height: 30px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .dark-mode-toggle.active {
+            background: #ff7043;
+        }
+        
+        .dark-mode-toggle .toggle-circle {
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+          .dark-mode-toggle.active .toggle-circle {
+            transform: translateX(30px);
+        }
+
+        /* 캡처 버튼 스타일 */
+        .capture-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            gap: 6px;
+            min-height: 40px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .capture-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+        
+        .capture-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .capture-btn i {
+            font-size: 16px;
+        }
+
+        /* 다크모드에서 캡처 버튼 */
+        .dark .capture-btn {
+            background: linear-gradient(135deg, #4c1d95 0%, #312e81 100%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+          .dark .capture-btn:hover {
+            background: linear-gradient(135deg, #5b21b6 0%, #3730a3 100%);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+
+        /* 사이드바 토글 기능 스타일 */
+        .sidebar-toggle-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 8px;
+            padding: 8px 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #374151;
+            font-size: 18px;
+            min-width: 40px;
+            height: 40px;
+        }
+        
+        .sidebar-toggle-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(226, 232, 240, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            color: #1f2937;
+        }
+        
+        /* 사이드바 숨김 상태 */
+        .sidebar-hidden .sidebar {
+            transform: translateX(-100%);
+            opacity: 0;
+            position: absolute;
+            width: 0;
+            overflow: hidden;
+        }
+        
+        .sidebar-hidden #mainContent {
+            margin-left: 0 !important;
+            width: 100vw !important;
+            max-width: 100% !important;
+        }
+        
+        /* Body 레이아웃 조정 */
+        .sidebar-hidden {
+            overflow-x: hidden;
+        }
+        
+        /* 사이드바와 메인 콘텐츠 전환 애니메이션 */
+        .sidebar {
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-hidden .sidebar {
+            flex-shrink: 1;
+            min-width: 0;
+        }
+        
+        /* 전체 Body 레이아웃 개선 */
+        body {
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-hidden body {
+            padding-left: 0 !important;
+        }
+        
+        /* 메인 콘텐츠 확장 */
+        .sidebar-hidden #mainContent {
+            flex: 1 !important;
+            width: calc(100vw - 0px) !important;
+            min-width: 100% !important;
+        }
+        
+        #mainContent {
+            transition: all 0.3s ease;
+        }
+        
+        /* 다크모드에서 사이드바 토글 버튼 */
+        .dark .sidebar-toggle-btn {
+            background: rgba(51, 65, 85, 0.9);
+            border-color: rgba(100, 116, 139, 0.6);
+            color: #e2e8f0;
+        }
+        
+        .dark .sidebar-toggle-btn:hover {
+            background: rgba(51, 65, 85, 1);
+            border-color: rgba(100, 116, 139, 0.8);
+            color: #f1f5f9;
+        }
+
+        /* 라이트 모드에서 카드 내 텍스트 색상 강화 */
+        body:not(.dark) .card h3 {
+            color: #374151 !important;
+        }
+
+        body:not(.dark) .card h4 {
+            color: #374151 !important;
+        }
+
+        body:not(.dark) .card .text-lg {
+            color: #374151 !important;
+        }
+
+        body:not(.dark) .card .text-xl {
+            color: #374151 !important;
+        }
+
+        body:not(.dark) .card .text-sm {
+            color: #6b7280 !important;
+        }
+
+        body:not(.dark) .card span {
+            color: #4b5563 !important;
+        }
+
+        body:not(.dark) .card label {
+            color: #374151 !important;
+        }
+
+        /* 표 스타일 */
+        table {
+            font-size: 14px;
+        }
+
+        /* 다크모드 표 스타일 */
+        .dark table {
+            background-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+
+        .dark table thead {
+            background-color: #475569 !important;
+        }
+
+        .dark table th {
+            color: #e2e8f0 !important;
+            border-color: #64748b !important;
+        }
+
+        .dark table td {
+            color: #e2e8f0 !important;
+            border-color: #64748b !important;
+        }
+
+        .dark table tbody tr:hover {
+            background-color: #475569 !important;
+        }
+
+        /* 다크모드에서 토글 스위치 스타일 */
+
+        /* 추가 다크모드 스타일 */
+        
+        /* 입력 필드 다크모드 */
+        .dark input[type="text"] {
+            background: #374151 !important;
+            border: 1px solid #4b5563 !important;
+            color: #e2e8f0 !important;
+        }
+        
+        .dark input[type="text"]:focus {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+        }
+        
+        .dark input[type="text"]::placeholder {
+            color: #9ca3af !important;
+        }
+        
+        /* 버튼 다크모드 */
+        .dark button {
+            background: #4f46e5 !important;
+            color: #ffffff !important;
+            border: 1px solid #4338ca !important;
+        }
+        
+        .dark button:hover {
+            background: #4338ca !important;
+        }
+        
+        /* 테이블 다크모드 */
+        .dark table {
+            background: #374151 !important;
+            color: #e2e8f0 !important;
+        }
+        
+        .dark th {
+            background: #4b5563 !important;
+            color: #f3f4f6 !important;
+            border-color: #6b7280 !important;
+        }
+        
+        .dark td {
+            background: #374151 !important;
+            color: #e2e8f0 !important;
+            border-color: #4b5563 !important;
+        }
+        
+        .dark tr:hover td {
+            background: #4b5563 !important;
+        }
+        
+        /* 특별한 배경색 행들 다크모드 */
+        .dark .bg-red-50 {
+            background: #7f1d1d !important;
+        }
+        
+        .dark .bg-red-50 td {
+            background: #7f1d1d !important;
+            color: #fecaca !important;
+        }
+        
+        .dark .bg-orange-50 {
+            background: #7c2d12 !important;
+        }
+        
+        .dark .bg-orange-50 td {
+            background: #7c2d12 !important;
+            color: #fed7aa !important;
+        }
+        
+        .dark .bg-green-50 {
+            background: #14532d !important;
+        }
+        
+        .dark .bg-green-50 td {
+            background: #14532d !important;
+            color: #bbf7d0 !important;
+        }
+        
+        .dark .bg-gray-50 {
+            background: #374151 !important;
+        }
+        
+        .dark .bg-gray-50 td {
+            background: #374151 !important;
+            color: #d1d5db !important;
+        }
+        
+        /* 텍스트 색상 다크모드 */
+        .dark .text-red-700 {
+            color: #fca5a5 !important;
+        }
+        
+        .dark .text-red-800 {
+            color: #fecaca !important;
+        }
+        
+        .dark .text-orange-800 {
+            color: #fed7aa !important;
+        }
+        
+        .dark .text-green-700 {
+            color: #bbf7d0 !important;
+        }
+        
+        .dark .text-green-800 {
+            color: #d1fae5 !important;
+        }
+        
+        .dark .text-gray-600 {
+            color: #9ca3af !important;
+        }
+        
+        .dark .text-gray-800 {
+            color: #e5e7eb !important;
+        }
+        
+        /* 배지 스타일 다크모드 */
+        .dark .bg-red-100 {
+            background: #7f1d1d !important;
+        }
+        
+        .dark .text-red-800 {
+            color: #fecaca !important;
+        }
+        
+        .dark .bg-green-100 {
+            background: #14532d !important;
+        }
+        
+        .dark .text-green-800 {
+            color: #bbf7d0 !important;
+        }
+        
+        .dark .bg-yellow-100 {
+            background: #78350f !important;
+        }
+        
+        .dark .text-yellow-800 {
+            color: #fde68a !important;
+        }
+        
+        /* 분석 박스 다크모드 */
+        .dark .bg-blue-50 {
+            background: #1e3a8a !important;
+        }
+        
+        .dark .border-blue-200 {
+            border-color: #3b82f6 !important;
+        }
+        
+        .dark .text-blue-800 {
+            color: #93c5fd !important;
+        }
+        
+        .dark .bg-purple-50 {
+            background: #581c87 !important;
+        }
+        
+        .dark .border-purple-200 {
+            border-color: #8b5cf6 !important;
+        }
+        
+        .dark .text-purple-800 {
+            color: #c4b5fd !important;
+        }
+        
+        .dark .bg-green-50 {
+            background: #14532d !important;
+        }
+        
+        .dark .border-green-200 {
+            border-color: #22c55e !important;
+        }
+        
+        .dark .text-green-800 {
+            color: #bbf7d0 !important;
+        }
+        
+        /* 사이드바 메뉴 다크모드 */
+        .dark .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .dark .sidebar h2 {
+            color: #f1f5f9 !important;
+        }
+        
+        .dark .sidebar .menu-item {
+            color: #cbd5e1 !important;
+        }
+        
+        .dark .sidebar .menu-item i {
+            color: #94a3b8 !important;
+        }
+
+        /* 네비게이션 바 다크모드 */
+        .dark .navbar {
+            background: #1e293b !important;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .dark .navbar a {
+            color: #e2e8f0 !important;
+        }
+        
+        .dark .navbar a:hover {
+            color: #f3f4f6 !important;
+        }
+        
+        /* 카드 헤더 다크모드 */
+        .dark .card-header {
+            background: #374151 !important;
+            color: #f3f4f6 !important;
+            border-bottom: 1px solid #475569;
+        }
+        
+        /* 차트 영역 다크모드 */
+        .dark .chart-container {
+            background: #1e293b !important;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dark .chart-title {
+            color: #f3f4f6 !important;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+        
+        .dark .chart-legend {
+            color: #94a3b8 !important;
+        }
+        
+        /* 툴팁 다크모드 */
+        .dark .tooltip {
+            background: #374151 !important;
+            color: #f3f4f6 !important;
+            border: 1px solid #475569;
+        }
+        
+        /* 스위치 다크모드 */
+        .dark .switch {
+            background: #374151;
+            border-radius: 9999px;
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .dark .switch:before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+        }
+        
+        .dark .switch.active {
+            background: #4f46e5;
+        }
+        
+        .dark .switch.active:before {
+            transform: translateX(14px);
+        }        /* Radial Ishikawa Diagram 스타일 */
+        #ishikawaCanvas {
+            cursor: crosshair;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        #ishikawaCanvas:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ishikawa-legend-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .ishikawa-legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            margin-right: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .ishikawa-legend-text {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* 다크모드 지원 */
+        .dark #ishikawaCanvas {
+            background: #1e293b !important;
+        }
+        
+        .dark .ishikawa-legend-item {
+            background: rgba(55, 65, 81, 0.8) !important;
+            border-color: #4b5563 !important;
+            color: #e5e7eb !important;
+        }
+        
+        .dark #ishikawaDetails {
+            background: #374151 !important;
+            border-color: #4b5563 !important;
+            color: #e5e7eb !important;
+        }
+          .dark #ishikawaLoading {
+            background: rgba(30, 41, 59, 0.8) !important;
+            color: #e7e9eb !important;
+        }
+
+        /* Risk Level 색상 클래스 */
+        .risk-critical {
+            background-color: #ff0000 !important;
+            color: white !important;
+        }
+
+        .risk-high {
+            background-color: #f4b183 !important;
+            color: #2d3748 !important;
+        }
+
+        .risk-medium {
+            background-color: #7ed6f9 !important;
+            color: #2d3748 !important;
+        }
+
+        .risk-low {
+            background-color: #90ee90 !important;
+            color: #2d3748 !important;
+        }
+
+        /* Dark 모드에서도 같은 색상 유지 */
+        .dark .risk-critical {
+            background-color: #ff0000 !important;
+            color: white !important;
+        }
+
+        .dark .risk-high {
+            background-color: #f4b183 !important;
+            color: #2d3748 !important;
+        }
+
+        .dark .risk-medium {
+            background-color: #7ed6f9 !important;
+            color: #2d3748 !important;
+        }        .dark .risk-low {
+            background-color: #90ee90 !important;
+            color: #2d3748 !important;
+        }
+
+        /* Normal Risk Level 색상 클래스 추가 */
+        .risk-normal {
+            background-color: #f3f4f6 !important;
+            color: #6b7280 !important;
+        }        .dark .risk-normal {
+            background-color: #f3f4f6 !important;
+            color: #6b7280 !important;
+        }
+        
+        /* 세부 정보 테이블 다크모드 스타일 */
+        .dark .bg-blue-50 {
+            background: #1e3a8a !important;
+        }
+        
+        .dark .bg-green-50 {
+            background: #14532d !important;
+        }
+        
+        .dark .bg-yellow-50 {
+            background: #78350f !important;
+        }
+        
+        .dark .bg-red-100 {
+            background: #7f1d1d !important;
+        }
+        
+        .dark .bg-yellow-100 {
+            background: #78350f !important;
+        }
+        
+        .dark .bg-green-100 {
+            background: #14532d !important;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <!-- 사이드바 -->
+    <div class="sidebar w-[320px] flex flex-col text-white">
+        <!-- 로고 -->
+        <div class="p-6 flex items-center justify-center">
+            <div class="flex flex-col items-center w-full">
+                <div style="font-family: 'Malgun Gothic', '맑은 고딕', 'Pacifico', cursive; font-size: 2rem; font-weight: bold;" class="mb-1">OnePoint Report</div>
+                <div class="text-[10pt] font-extrabold tracking-wide text-white drop-shadow-lg text-center w-full mt-1 bg-gradient-to-r from-orange-400 via-red-400 to-pink-500 bg-clip-text text-transparent animate-pulse">
+                    Design by HyperAutomation
+                </div>
+            </div>
+        </div>
+          
+        <!-- 메인 메뉴 -->
+        <div class="flex-1 flex flex-col px-2 py-6 space-y-1">
+            <div class="menu-item flex items-center p-3 rounded" onclick="navigateToOverview()">
+                <div class="w-6 h-6 flex items-center justify-center mr-3">
+                    <i class="ri-dashboard-line"></i>
+                </div>
+                <span>Overview</span>
+            </div>
+            
+            <div class="menu-item active-menu flex items-center p-3 rounded">
+                <div class="w-6 h-6 flex items-center justify-center mr-3">
+                    <i class="ri-line-chart-line"></i>
+                </div>
+                <span>Analytics</span>
+            </div>
+              <div class="menu-item flex items-center p-3 rounded" onclick="navigateToReports()">
+                <div class="w-6 h-6 flex items-center justify-center mr-3">
+                    <i class="ri-calendar-line"></i>
+                </div>
+                <span>Reports</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="flex-1 bg-gradient-to-br from-orange-50 to-amber-50 p-8" id="mainContent">        <!-- 헤더 -->
+        <div class="flex justify-between items-center mb-8">
+            <div class="flex items-center space-x-3">
+                <!-- 사이드바 토글 버튼 -->
+                <button class="sidebar-toggle-btn" id="sidebarToggle" title="사이드바 토글">
+                    <i class="ri-menu-line"></i>
+                </button>
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-800 mb-2">Analytics Dashboard</h1>
+                    <p class="text-gray-600">데이터 분석 및 통계 정보를 확인하세요</p>
+                </div>
+            </div>
+              <div class="flex items-center space-x-3">
+                <!-- Full Page Capture 버튼 -->
+                <button class="capture-btn" id="fullPageCapture" title="전체 페이지 캡처">
+                    <i class="ri-camera-line"></i>
+                    <span>캡처</span>
+                </button>
+                
+                <!-- 다크모드 토글 -->
+                <div class="dark-mode-toggle" id="darkModeToggle">
+                    <div class="toggle-circle">
+                        <i class="ri-sun-line text-sm" id="modeIcon"></i>
+                    </div>
+                </div>
+            </div>
+        </div><!-- LOTID 입력 및 분석 영역 -->
+        <div class="card mb-8 p-6">
+            <h3 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="ri-search-line mr-2 text-blue-500"></i>
+                불량 원인 분석
+            </h3>
+            <div class="flex gap-4 mb-6">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">LOTID 입력</label>
+                    <input type="text" id="lotidInput" placeholder="LOTID를 입력하세요 (예: A327GA)" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="analyzeLotDefects()" 
+                            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="ri-search-line mr-2"></i>
+                        분석하기
+                    </button>
+                </div>
+            </div>
+              <!-- 분석 결과 영역 -->
+            <div id="analysisResult" class="hidden">
+                <h4 class="text-lg font-medium mb-4 text-gray-800">분석 결과</h4>                <!-- 불량 원인 분석 테이블 -->
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">Risk Level</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">Spec Out<br>(발생율)</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">불량 요인</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">누적<br>(Slot)</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">Interlock</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">Auto / Manual</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">점검 범위</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">검사 방법</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">검사 수량</th>
+                                <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">비고</th>
+                            </tr>
+                        </thead>
+                        <tbody id="defectAnalysisTableBody">
+                            <!-- 분석 결과 행들이 여기에 동적으로 추가됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 세부 정보 테이블 -->
+                <div class="mt-8">
+                    <h4 class="text-lg font-medium mb-4 text-gray-800 flex items-center">
+                        <i class="ri-file-list-3-line mr-2 text-purple-500"></i>
+                        세부 정보 분석
+                    </h4>
+                    
+                    <!-- Spec Out 불량 유형별 발생률 테이블 -->
+                    <div class="mb-6">
+                        <h5 class="text-md font-medium mb-3 text-gray-700">1. Spec Out된 불량 유형별 불량율</h5>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-sm">
+                                <thead class="bg-blue-50">
+                                    <tr>
+                                        <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">불량 유형</th>
+                                        <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">발생 건수</th>
+                                        <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">전체 대비 비율</th>
+                                        <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">불량율 (%)</th>
+                                        <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">심각도</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="defectTypeTableBody">
+                                    <!-- 불량 유형별 데이터가 여기에 동적으로 추가됩니다 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 장비별/카드별 상세 분석 테이블 -->
+                    <div class="mb-6">
+                        <h5 class="text-md font-medium mb-3 text-gray-700">2. 장비별/카드별 상세 분석</h5>
+                        
+                        <!-- 장비별 분석 -->
+                        <div class="mb-4">
+                            <h6 class="text-sm font-medium mb-2 text-gray-600">장비별 불량 분석</h6>
+                            <div class="overflow-x-auto">
+                                <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-sm">
+                                    <thead class="bg-green-50">
+                                        <tr>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">장비 ID</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">총 테스트 수</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">불량 수</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">불량율 (%)</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">전체 대비 비율 (%)</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">상태</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="equipmentAnalysisTableBody">
+                                        <!-- 장비별 분석 데이터가 여기에 동적으로 추가됩니다 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 카드별 분석 -->
+                        <div class="mb-4">
+                            <h6 class="text-sm font-medium mb-2 text-gray-600">카드별 불량 분석</h6>
+                            <div class="overflow-x-auto">
+                                <table class="w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-sm">
+                                    <thead class="bg-yellow-50">
+                                        <tr>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">카드 ID</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">총 테스트 수</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">불량 수</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">불량율 (%)</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">전체 대비 비율 (%)</th>
+                                            <th class="border border-gray-300 px-3 py-2 text-center text-xs font-medium text-gray-700">상태</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cardAnalysisTableBody">
+                                        <!-- 카드별 분석 데이터가 여기에 동적으로 추가됩니다 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                  <!-- 요약 정보 -->
+                <div id="defectSummary" class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- 요약 카드들이 여기에 표시됩니다 -->
+                </div>
+                
+                <!-- Radial Ishikawa Diagram 섹션 -->
+                <div id="ishikawaDiagramSection" class="mt-8">
+                    <div class="card p-6">
+                        <div class="flex justify-between items-center mb-6">                            <h4 class="text-lg font-medium text-gray-800 flex items-center">
+                                <i class="ri-mind-map mr-3 text-indigo-500"></i>
+                                불량유형별 조치방법
+                            </h4>
+                            <div class="flex gap-2">
+                                <button id="ishikawaRefresh" class="px-3 py-1 text-sm bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors">
+                                    <i class="ri-refresh-line mr-1"></i>새로고침
+                                </button>
+                                <button id="ishikawaFullscreen" class="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">
+                                    <i class="ri-fullscreen-line mr-1"></i>전체화면
+                                </button>
+                            </div>
+                        </div>                        <!-- Canvas 영역 (3D 방사형 다이어그램용) -->
+                        <div class="relative bg-gray-50 border border-gray-200 rounded-lg overflow-hidden w-full h-[70vh] min-h-[600px] flex items-center justify-center">
+                            <!-- 기존 canvas 제거, infographic.html iframe으로 대체 -->
+                            <iframe id="infographicFrame" src="infographic.html?lotid=F2KC3" class="w-full h-full border-0 rounded-lg" style="background:transparent;"></iframe>
+                            <!-- 로딩 오버레이 -->
+                            <div id="ishikawaLoading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center hidden">
+                                <div class="text-center">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto mb-2"></div>
+                                    <p class="text-sm text-gray-600">다이어그램 생성 중...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 범례 -->
+                        <div id="ishikawaLegend" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <!-- 범례 항목들이 동적으로 추가됩니다 -->
+                        </div>
+                          <!-- 상세 정보 패널 -->
+                        <div id="ishikawaDetails" class="mt-4 hidden">
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <h5 class="font-medium text-gray-800 mb-2">선택된 항목 상세 정보</h5>
+                                <div id="ishikawaDetailsContent" class="text-sm text-gray-600">
+                                    <!-- 상세 정보가 여기에 표시됩니다 -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                          </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reports 영역 (기본적으로 숨김) -->
+        <div id="reportsSection" class="hidden">
+            <!-- Reports 헤더 -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-800 mb-2">PDF Report Generator</h1>
+                    <p class="text-gray-600">LOTID 기준으로 통합 리포트를 생성하고 PDF로 다운로드하세요</p>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <!-- 뒤로가기 버튼 -->
+                    <button onclick="backToAnalytics()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                        <i class="ri-arrow-left-line mr-2"></i>
+                        Analytics로 돌아가기
+                    </button>
+                </div>
+            </div>
+            
+            <!-- LOTID 입력 영역 -->
+            <div class="card mb-8 p-6">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="ri-file-pdf-line mr-2 text-red-500"></i>
+                    PDF 리포트 생성
+                </h3>
+                <div class="flex gap-4 mb-6">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">LOTID 입력</label>
+                        <input type="text" id="reportLotidInput" placeholder="리포트 생성할 LOTID를 입력하세요 (예: A327GA)" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <button onclick="generateReport()" 
+                                class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                            <i class="ri-file-line mr-2"></i>
+                            리포트 생성
+                        </button>
+                        <button onclick="downloadPDF()" id="downloadPDFBtn" 
+                                class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                                disabled>
+                            <i class="ri-download-line mr-2"></i>
+                            PDF 다운로드
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PDF 리포트 미리보기 영역 -->
+            <div id="reportPreview" class="hidden">
+                <div class="card p-6 mb-8">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="ri-eye-line mr-2 text-blue-500"></i>
+                        리포트 미리보기
+                    </h3>
+                    
+                    <!-- PDF 리포트 레이아웃 -->
+                    <div id="pdfReportLayout" class="bg-white border rounded-lg p-6 shadow-lg" style="width: 210mm; margin: 0 auto;">
+                        <!-- 리포트 헤더 -->
+                        <div class="text-center mb-6 border-b pb-4">
+                            <h1 class="text-2xl font-bold text-gray-800 mb-2">OnePoint Defect Analysis Report</h1>
+                            <p class="text-gray-600" id="reportLotInfo">LOT: <span id="reportLotId">-</span> | 생성일: <span id="reportDate">-</span></p>
+                        </div>
+                        
+                        <!-- 3단 레이아웃 -->
+                        <div class="grid grid-cols-12 gap-4 mb-6">
+                            <!-- 1.1단: 불량 유형 및 발생 현황 (왼쪽 상단) -->
+                            <div class="col-span-6 row-span-1">
+                                <div class="border rounded p-4 h-64">
+                                    <h4 class="text-lg font-semibold mb-2 text-center">불량 유형 및 발생 현황</h4>
+                                    <div id="reportChart1" class="h-48 flex items-center justify-center">
+                                        <canvas id="reportChart1Canvas" width="300" height="180"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 1.3단: 3D 방사형 다이어그램 (오른쪽 1,2단 병합) -->
+                            <div class="col-span-6 row-span-2">
+                                <div class="border rounded p-4 h-full">
+                                    <h4 class="text-lg font-semibold mb-2 text-center">3D 방사형 다이어그램</h4>
+                                    <div id="reportDiagram" class="flex items-center justify-center" style="height: 400px;">
+                                        <canvas id="reportDiagramCanvas" width="400" height="360"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 1.2단: 이미지 분석 모달창 (왼쪽 하단) -->
+                            <div class="col-span-6 row-span-1">
+                                <div class="border rounded p-4 h-64">
+                                    <h4 class="text-lg font-semibold mb-2 text-center">이미지 분석 결과</h4>
+                                    <div id="reportImageAnalysis" class="h-48 flex items-center justify-center">
+                                        <div class="text-center text-gray-500">
+                                            <i class="ri-image-line text-4xl mb-2"></i>
+                                            <p>이미지 분석 데이터가 여기에 표시됩니다</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 1.4단: 상세 정보 패널 (3단 전체 병합) -->
+                        <div class="col-span-12">
+                            <div class="border rounded p-4">
+                                <h4 class="text-lg font-semibold mb-4 text-center">상세 정보 패널</h4>
+                                <div id="reportDetailPanel" class="space-y-4">
+                                    <!-- 상세 정보가 여기에 표시됩니다 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><script>        // 네비게이션 함수
+        function navigateToOverview() {
+            window.location.href = 'index.html';
+        }
+        
+        // Reports 페이지로 이동
+        function navigateToReports() {
+            // Analytics 섹션 숨기기
+            const analyticsElements = document.querySelectorAll('#mainContent > div:not(#reportsSection)');
+            analyticsElements.forEach(el => el.style.display = 'none');
+            
+            // Reports 섹션 보이기
+            document.getElementById('reportsSection').classList.remove('hidden');
+            
+            // 메뉴 활성화 상태 변경
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active-menu');
+            });
+            event.target.closest('.menu-item').classList.add('active-menu');
+        }
+        
+        // Analytics로 돌아가기
+        function backToAnalytics() {
+            // Reports 섹션 숨기기
+            document.getElementById('reportsSection').classList.add('hidden');
+            
+            // Analytics 섹션 다시 보이기
+            const analyticsElements = document.querySelectorAll('#mainContent > div:not(#reportsSection)');
+            analyticsElements.forEach(el => el.style.display = 'block');
+            
+            // 메뉴 활성화 상태 변경
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active-menu');
+            });
+            document.querySelector('.menu-item:nth-child(2)').classList.add('active-menu'); // Analytics 메뉴
+        }
+        
+        // 다크모드 토글
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const body = document.body;
+            const html = document.documentElement;
+            const modeIcon = document.getElementById('modeIcon');
+            const mainContent = document.getElementById('mainContent');            function updateTextColors(isDark) {
+                const h1 = document.querySelector('h1');
+                const p = document.querySelector('p');
+                const allCards = document.querySelectorAll('.card');
+                const allInputs = document.querySelectorAll('input');
+                const allButtons = document.querySelectorAll('button');
+                const allTables = document.querySelectorAll('table');
+                
+                if (isDark) {
+                    if (h1) h1.style.color = '#e2e8f0';
+                    if (p) p.style.color = '#94a3b8';
+                    
+                    // 카드 업데이트
+                    allCards.forEach(card => {
+                        card.style.background = '#334155';
+                        card.style.color = '#e2e8f0';
+                        card.style.border = '1px solid #475569';
+                    });
+                    
+                    // 입력 필드 업데이트
+                    allInputs.forEach(input => {
+                        input.style.background = '#374151';
+                        input.style.color = '#e2e8f0';
+                        input.style.border = '1px solid #4b5563';
+                    });
+                    
+                    // 버튼 업데이트
+                    allButtons.forEach(button => {
+                        button.style.background = '#4f46e5';
+                        button.style.color = '#ffffff';
+                        button.style.border = '1px solid #4338ca';
+                    });
+                    
+                } else {
+                    if (h1) h1.style.color = '#1f2937';
+                    if (p) p.style.color = '#4b5563';
+                    
+                    // 카드 복원
+                    allCards.forEach(card => {
+                        card.style.background = '';
+                        card.style.color = '';
+                        card.style.border = '';
+                    });
+                    
+                    // 입력 필드 복원
+                    allInputs.forEach(input => {
+                        input.style.background = '';
+                        input.style.color = '';
+                        input.style.border = '';
+                    });
+                    
+                    // 버튼 복원
+                    allButtons.forEach(button => {
+                        button.style.background = '';
+                        button.style.color = '';
+                        button.style.border = '';
+                    });
+                }
+            }            darkModeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark');
+                html.classList.toggle('dark');
+                darkModeToggle.classList.toggle('active');
+                
+                const isDark = body.classList.contains('dark');
+                localStorage.setItem('darkMode', isDark);
+                
+                if (isDark) {
+                    modeIcon.className = 'ri-moon-line text-sm';
+                    mainContent.style.background = 'linear-gradient(135deg, #1e293b 0%, #334155 100%)';
+                } else {
+                    modeIcon.className = 'ri-sun-line text-sm';
+                    mainContent.style.background = 'linear-gradient(to bottom right, rgb(255 251 235), rgb(254 243 199))';
+                }
+                
+                updateTextColors(isDark);
+                
+                // 다크모드 변경 시 마인드맵 다이어그램 재생성
+                setTimeout(() => {
+                    const lastAnalysisData = window.lastAnalysisData;
+                    if (lastAnalysisData) {
+                        createRadialIshikawaDiagram(lastAnalysisData);
+                    } else {
+                        initializeCanvas();
+                    }
+                }, 100);
+            });
+
+            // 저장된 다크모드 설정 로드
+            const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (savedDarkMode) {
+                body.classList.add('dark');
+                html.classList.add('dark');
+                darkModeToggle.classList.add('active');
+                modeIcon.className = 'ri-moon-line text-sm';
+                mainContent.style.background = 'linear-gradient(135deg, #1e293b 0%, #334155 100%)';
+                updateTextColors(true);            } else {
+                updateTextColors(false);
+            }
+              // Full Page Capture 기능 추가
+            const captureBtn = document.getElementById('fullPageCapture');
+            
+            captureBtn.addEventListener('click', function() {
+                captureFullPage();
+            });
+              // 사이드바 토글 기능 추가
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            
+            // 로컬 스토리지에서 사이드바 상태 확인
+            const isSidebarHidden = localStorage.getItem('sidebarHidden') === 'true';
+            
+            // 초기 상태 설정
+            if (isSidebarHidden) {
+                body.classList.add('sidebar-hidden');
+            }
+            
+            // 사이드바 토글 이벤트
+            sidebarToggle.addEventListener('click', function() {
+                body.classList.toggle('sidebar-hidden');
+                const isHidden = body.classList.contains('sidebar-hidden');
+                
+                // 로컬 스토리지에 상태 저장
+                localStorage.setItem('sidebarHidden', isHidden);
+                
+                // 차트나 다이어그램이 있다면 리사이즈 (애니메이션 완료 후)
+                setTimeout(() => {
+                    // 마인드맵 다이어그램 리사이즈
+                    const canvas = document.getElementById('ishikawaCanvas');
+                    if (canvas && window.lastAnalysisData) {
+                        createRadialIshikawaDiagram(window.lastAnalysisData);
+                    }
+                }, 350);
+            });
+            
+            // 데이터 로딩 시작 (Excel 파일 직접 로딩 포함)
+            loadAnalyticsData();
+});
+
+        // index.html과 데이터 동기화를 위한 함수 추가
+        function syncWithIndexHtmlData() {
+            // index.html이 열려있는지 확인하고 데이터 동기화
+            try {
+                // 부모 윈도우나 다른 윈도우에서 index.html 데이터 가져오기
+                if (window.opener && window.opener.window && window.opener.window.chart2Data) {
+                    console.log('opener에서 chart2Data 발견:', window.opener.window.chart2Data);
+                    return window.opener.window.chart2Data;
+                }
+                
+                // localStorage에서 index.html Summary 데이터 확인
+                const storedSummaryData = localStorage.getItem('indexHtmlSummaryData');
+                if (storedSummaryData) {
+                    const summaryData = JSON.parse(storedSummaryData);
+                    console.log('localStorage에서 Summary 데이터 발견:', summaryData);
+                    return summaryData;
+                }
+                
+                // 전역 변수에서 확인
+                if (typeof window.chart2Data !== 'undefined') {
+                    console.log('전역 chart2Data 발견:', window.chart2Data);
+                    return window.chart2Data;
+                }
+                
+            } catch (error) {
+                console.log('index.html 데이터 동기화 실패:', error);
+            }
+            
+            return null;
+        }
+        
+        // index.html의 실제 Summary 평균 불량률 가져오기 (개선된 버전)
+        function getIndexHtmlActualDefectRate(lotData) {
+            // 1순위: 동기화된 데이터에서 계산
+            const syncedData = syncWithIndexHtmlData();
+            if (syncedData && Array.isArray(syncedData)) {
+                const avgRate = syncedData.reduce((sum, item) => sum + (item.defectRate || 0), 0) / syncedData.length;
+                console.log('동기화된 데이터에서 평균 불량률 계산:', avgRate.toFixed(2) + '%');
+                return avgRate;
+            }
+            
+            // 2순위: 실제 LOT 데이터로 index.html과 동일한 방식 계산
+            if (lotData && lotData.length > 0) {
+                return calculateActualDefectRate(lotData);
+            }
+            
+            return null;
+        }
+        
+        // 실제 LOT 데이터에서 불량율 평균 계산 함수 (index.html과 동일한 방식)
+        function calculateActualDefectRate(lotData) {
+            if (!lotData || lotData.length === 0) {
+                return 0;
+            }
+            
+            // index.html의 updateSummary2와 동일한 방식으로 계산
+            const lotDefectRates = [];
+            
+            lotData.forEach(item => {
+                const netdie = Number(item.NETDIE) || 0;
+                const failcodes = 
+                    (Number(item.BURNT) || 0) +
+                    (Number(item.PROBE_DAMAGE) || 0) +
+                    (Number(item.BUMP_DAMAGE) || 0) +
+                    (Number(item.PROBE_MISALIGN) || 0) +
+                    (Number(item.PATTERN_DAMAGE) || 0) +
+                    (Number(item.RAW_MATERIAL) || 0) +
+                    (Number(item.DISCOLOR) || 0) +
+                    (Number(item.NO_PROBE_MARK) || 0) +
+                    (Number(item.FOREIGN_MATERIAL) || 0) +
+                    (Number(item.MISSING_BUMP) || 0) +
+                    (Number(item.BIG_BALL) || 0) +
+                    (Number(item.AG_RICH) || 0);
+                
+                if (netdie > 0) {
+                    const slotRate = (failcodes / netdie) * 100;
+                    lotDefectRates.push({ defectRate: slotRate });
+                }
+            });
+            
+            // index.html의 updateSummary2와 동일한 계산
+            if (lotDefectRates.length === 0) {
+                return 0;
+            }
+            
+            const avgRate = lotDefectRates.reduce((sum, item) => sum + item.defectRate, 0) / lotDefectRates.length;
+            return avgRate;
+        }
+        
+        // 실제 LOT 데이터 분석 함수
+        function analyzeRealLotData(lotid) {
+            console.log('LOTID 검색 시작:', lotid);
+            
+            const finalData = window.defectData || defectData;
+            if (!finalData || finalData.length === 0) {
+                return {
+                    found: false,
+                    availableLots: []
+                };
+            }
+            
+            // LOT 컬럼 찾기
+            const possibleLotColumns = ['LOT', 'LOTID', 'LOT_ID', 'Lot', 'lot', 'LOTNO', 'LOT_NO'];
+            let lotColumn = null;
+            
+            for (const col of possibleLotColumns) {
+                if (finalData[0] && finalData[0].hasOwnProperty(col)) {
+                    lotColumn = col;
+                    break;
+                }
+            }
+            
+            if (!lotColumn) {
+                return {
+                    found: false,
+                    availableLots: []
+                };
+            }
+            
+            // 정확한 LOTID 검색
+            const searchLotid = lotid.toUpperCase().trim();
+            const lotData = finalData.filter(item => {
+                if (!item[lotColumn]) return false;
+                const itemLotid = item[lotColumn].toString().toUpperCase().trim();
+                return itemLotid === searchLotid;
+            });
+            
+            // 사용 가능한 LOTID 목록
+            const availableLots = [...new Set(finalData
+                .filter(item => item[lotColumn] && item[lotColumn].toString().trim())
+                .map(item => item[lotColumn].toString().trim())
+            )].sort();
+            
+            if (lotData.length === 0) {
+                return {
+                    found: false,
+                    availableLots: availableLots
+                };
+            }
+            
+            return {
+                found: true,
+                lotid: lotid,
+                lotData: lotData,
+                totalTests: lotData.length,
+                totalDefects: lotData.reduce((sum, item) => {
+                    return sum + (
+                        (Number(item.BURNT) || 0) +
+                        (Number(item.PROBE_DAMAGE) || 0) +
+                        (Number(item.BUMP_DAMAGE) || 0) +
+                        (Number(item.PROBE_MISALIGN) || 0) +
+                        (Number(item.PATTERN_DAMAGE) || 0) +
+                        (Number(item.RAW_MATERIAL) || 0) +
+                        (Number(item.DISCOLOR) || 0) +
+                        (Number(item.NO_PROBE_MARK) || 0) +
+                        (Number(item.FOREIGN_MATERIAL) || 0) +
+                        (Number(item.MISSING_BUMP) || 0) +
+                        (Number(item.BIG_BALL) || 0) +
+                        (Number(item.AG_RICH) || 0)
+                    );
+                }, 0),
+                date: new Date().toLocaleDateString(),
+                rootCause: "분석 완료",
+                recommendations: ["데이터 기반 분석 완료", "실제 불량율 적용됨"]
+            };
+        }        // 불량 원인 분석 테이블 행 생성
+        function generateDefectAnalysisRows(analysisData) {
+            // 실제 LOT 데이터에서 불량율 평균 계산
+            let defectRate = 0;
+            if (analysisData.lotData && analysisData.lotData.length > 0) {
+                defectRate = calculateActualDefectRate(analysisData.lotData);
+                console.log('실제 LOT 불량율 계산됨:', defectRate.toFixed(2), '%');
+            }
+            
+            // 누적 Slot 수 계산
+            const totalSlots = analysisData.lotData ? analysisData.lotData.length : 0;
+            console.log('누적 Slot 수:', totalSlots);
+            
+            // 장비 및 카드 분석
+            const equipmentCardAnalysis = analyzeEquipmentAndCard(analysisData.lotData);
+            
+            // 새로운 Risk Level 결정 (불량율 + Slot 조건 AND)
+            let riskLevel, riskColor, riskBgColor, riskRowClass;
+            
+            if (defectRate >= 3.0 && totalSlots >= 3) {
+                // Critical: 불량율 3.0% 이상 AND Slot 3개 이상
+                riskLevel = "Critical";
+                riskColor = "text-white";
+                riskBgColor = "bg-red-600";
+                riskRowClass = "risk-critical";
+            } else if (defectRate >= 3.0 && totalSlots >= 1) {
+                // High: 불량율 3.0% 이상 AND Slot 1개 이상 (Critical 조건 미충족)
+                riskLevel = "High";
+                riskColor = "text-white";
+                riskBgColor = "bg-orange-500";
+                riskRowClass = "risk-high";
+            } else if (defectRate >= 2.0 && totalSlots >= 2) {
+                // Medium: 불량율 2.0% 이상 AND Slot 2개 이상
+                riskLevel = "Medium";
+                riskColor = "text-white";
+                riskBgColor = "bg-blue-500";
+                riskRowClass = "risk-medium";
+            } else if (defectRate >= 2.0 && totalSlots >= 1) {
+                // Low: 불량율 2.0% 이상 AND Slot 1개 이상 (Medium 조건 미충족)
+                riskLevel = "Low";
+                riskColor = "text-white";
+                riskBgColor = "bg-green-500";
+                riskRowClass = "risk-low";
+            } else {
+                // Normal: 불량율 2.0% 미만 (Slot 조건 무관)
+                riskLevel = "Normal";
+                riskColor = "text-gray-600";
+                riskBgColor = "bg-gray-100";
+                riskRowClass = "risk-normal";
+            }
+            
+            console.log(`Risk Level 판정: ${riskLevel} (불량율: ${defectRate.toFixed(2)}%, Slot: ${totalSlots})`);
+            
+            // 불량 요인 결정 (기존 조건에 따라)
+            let defectFactor;
+            if (equipmentCardAnalysis.equipmentCount > 1 && equipmentCardAnalysis.cardCount === 1) {
+                defectFactor = "카드 원인";
+            } else if (equipmentCardAnalysis.equipmentCount === 1 && equipmentCardAnalysis.cardCount > 1) {
+                defectFactor = "장비 원인";
+            } else {
+                defectFactor = "기타";
+            }
+            
+            // Risk Level에 따른 조치사항 결정
+            let interlockAction, autoManual, inspectionScope, inspectionMethod, inspectionQuantity, remarks;
+            
+            switch (riskLevel) {
+                case "Critical":
+                    interlockAction = "동일 제품 전설비 Stop";
+                    autoManual = "RPA Auto<br>(Stop)";
+                    inspectionScope = "TEST 완료 전 제품";
+                    inspectionMethod = "AVI & scope";
+                    inspectionQuantity = "3Lot";
+                    remarks = "현 양산 Lot 포함";
+                    break;
+                case "High":
+                    interlockAction = "대상 카드/설비 즉시 Stop";
+                    autoManual = "RPA Auto<br>(Stop)";
+                    inspectionScope = "대상 카드 진행한 lot";
+                    inspectionMethod = "AVI & scope";
+                    inspectionQuantity = "2Lot";
+                    remarks = "현 양산 Lot 포함";
+                    break;
+                case "Medium":
+                    interlockAction = "대상 설비 Monitoring 진행";
+                    autoManual = "RPA Auto<br>(MONITORING)";
+                    inspectionScope = "현 진행 중 Lot";
+                    inspectionMethod = "AVI & scope";
+                    inspectionQuantity = "1Lot";
+                    remarks = "현재 진행";
+                    break;
+                case "Low":
+                    interlockAction = "분석 Report Mail 송부";
+                    autoManual = "Mail Auto";
+                    inspectionScope = "현 진행 중 Lot";
+                    inspectionMethod = "AVI & scope";
+                    inspectionQuantity = "1Lot";
+                    remarks = "설비 Lot";
+                    break;
+                case "Normal":
+                    interlockAction = "모니터링 지속";
+                    autoManual = "자동 감시";
+                    inspectionScope = "정상 범위";
+                    inspectionMethod = "정기 점검";
+                    inspectionQuantity = "해당없음";
+                    remarks = "정상 상태";
+                    break;
+            }
+            
+            return `
+                <tr class="hover:bg-gray-50 ${riskRowClass}">
+                    <td class="border border-gray-300 px-2 py-3 text-center">
+                        <span class="px-2 py-1 rounded text-xs font-medium ${riskBgColor} ${riskColor}">
+                            ${riskLevel}
+                        </span>
+                    </td>
+                    <td class="border border-gray-300 px-2 py-3 text-center text-xs font-bold">${defectRate.toFixed(2)}%</td>
+                    <td class="border border-gray-300 px-2 py-3 text-center text-xs">${defectFactor}</td>
+                    <td class="border border-gray-300 px-2 py-3 text-center text-xs font-bold">${totalSlots}</td>
+                    <td class="border border-gray-300 px-2 py-3 text-center text-xs">${interlockAction}</td>
+                    <td class="border border-gray-300 px-2 py-3 text-center text-xs">${autoManual}</td>
+                    <td class="border border-gray-300 px-2 py-3 text-center text-xs">${inspectionScope}</td>
+                    <td class="border border-gray-300 px-2 py-3 text-center text-xs">${inspectionMethod}</td>
+                    <td class="border border-gray-300 px-2 py-3 text-center text-xs">${inspectionQuantity}</td>
+                    <td class="border border-gray-300 px-2 py-3 text-center text-xs">${remarks}</td>
+                </tr>
+            `;
+        }
+        
+        // 장비 및 카드 분석 함수
+        function analyzeEquipmentAndCard(lotData) {
+            if (!lotData || lotData.length === 0) {
+                return {
+                    equipmentCount: 0,
+                    cardCount: 0,
+                    equipmentList: [],
+                    cardList: []
+                };
+            }
+            
+            // 장비 ID 수집 (가능한 컬럼명들)
+            const equipmentIds = new Set();
+            const cardIds = new Set();
+            
+            lotData.forEach(item => {
+                // 장비 ID 수집
+                const eqpId = item.EQPID || item.EQP_ID || item.EQUIPMENT_ID || item.EQUIPMENTID || item.EQP;
+                if (eqpId && eqpId.toString().trim()) {
+                    equipmentIds.add(eqpId.toString().trim());
+                }
+                
+                // 카드 ID 수집
+                const cardId = item.PCID || item.PC_ID || item.PROBE_CARD_ID || item.PROBECARDID || item.CARDID || item.PC;
+                if (cardId && cardId.toString().trim()) {
+                    cardIds.add(cardId.toString().trim());
+                }
+            });
+            
+            const result = {
+                equipmentCount: equipmentIds.size,
+                cardCount: cardIds.size,
+                equipmentList: Array.from(equipmentIds),
+                cardList: Array.from(cardIds)
+            };
+              console.log('장비 및 카드 분석 결과:', result);
+            return result;
+        }
+        
+        // 불량 유형별 발생률 분석 함수
+        function analyzeDefectTypes(lotData) {
+            if (!lotData || lotData.length === 0) {
+                return [];
+            }
+            
+            const defectTypes = {
+                'BURNT': { name: 'BURNT', count: 0, total: 0 },
+                'PROBE_DAMAGE': { name: 'PROBE DAMAGE', count: 0, total: 0 },
+                'BUMP_DAMAGE': { name: 'BUMP DAMAGE', count: 0, total: 0 },
+                'PROBE_MISALIGN': { name: 'PROBE MISALIGN', count: 0, total: 0 },
+                'PATTERN_DAMAGE': { name: 'PATTERN DAMAGE', count: 0, total: 0 },
+                'RAW_MATERIAL': { name: 'RAW MATERIAL', count: 0, total: 0 },
+                'DISCOLOR': { name: 'DISCOLOR', count: 0, total: 0 },
+                'NO_PROBE_MARK': { name: 'NO PROBE MARK', count: 0, total: 0 },
+                'FOREIGN_MATERIAL': { name: 'FOREIGN MATERIAL', count: 0, total: 0 },
+                'MISSING_BUMP': { name: 'MISSING BUMP', count: 0, total: 0 },
+                'BIG_BALL': { name: 'BIG BALL', count: 0, total: 0 },
+                'AG_RICH': { name: 'AG RICH', count: 0, total: 0 }
+            };
+            
+            let totalDefects = 0;
+            let totalNetdie = 0;
+            
+            lotData.forEach(item => {
+                const netdie = Number(item.NETDIE) || 0;
+                totalNetdie += netdie;
+                
+                Object.keys(defectTypes).forEach(key => {
+                    const count = Number(item[key]) || 0;
+                    defectTypes[key].count += count;
+                    defectTypes[key].total += netdie;
+                    totalDefects += count;
+                });
+            });
+            
+            return Object.values(defectTypes)
+                .filter(type => type.count > 0)
+                .map(type => ({
+                    name: type.name,
+                    count: type.count,
+                    ratio: ((type.count / totalDefects) * 100).toFixed(1),
+                    defectRate: ((type.count / type.total) * 100).toFixed(2),
+                    severity: type.count >= 10 ? 'High' : type.count >= 5 ? 'Medium' : 'Low'
+                }))
+                .sort((a, b) => b.count - a.count);
+        }
+        
+        // 장비별 상세 분석 함수
+        function analyzeEquipmentDetails(lotData) {
+            if (!lotData || lotData.length === 0) {
+                return [];
+            }
+            
+            const equipmentData = {};
+            let totalDefects = 0;
+            
+            lotData.forEach(item => {
+                const eqpId = item.EQPID || item.EQP_ID || item.EQUIPMENT_ID || item.EQUIPMENTID || item.EQP || '알수없음';
+                const netdie = Number(item.NETDIE) || 0;
+                
+                const defectCount = 
+                    (Number(item.BURNT) || 0) +
+                    (Number(item.PROBE_DAMAGE) || 0) +
+                    (Number(item.BUMP_DAMAGE) || 0) +
+                    (Number(item.PROBE_MISALIGN) || 0) +
+                    (Number(item.PATTERN_DAMAGE) || 0) +
+                    (Number(item.RAW_MATERIAL) || 0) +
+                    (Number(item.DISCOLOR) || 0) +
+                    (Number(item.NO_PROBE_MARK) || 0) +
+                    (Number(item.FOREIGN_MATERIAL) || 0) +
+                    (Number(item.MISSING_BUMP) || 0) +
+                    (Number(item.BIG_BALL) || 0) +
+                    (Number(item.AG_RICH) || 0);
+                
+                totalDefects += defectCount;
+                
+                if (!equipmentData[eqpId]) {
+                    equipmentData[eqpId] = {
+                        id: eqpId,
+                        totalTests: 0,
+                        totalDefects: 0,
+                        totalNetdie: 0
+                    };
+                }
+                
+                equipmentData[eqpId].totalTests += 1;
+                equipmentData[eqpId].totalDefects += defectCount;
+                equipmentData[eqpId].totalNetdie += netdie;
+            });
+            
+            return Object.values(equipmentData).map(equipment => ({
+                id: equipment.id,
+                totalTests: equipment.totalTests,
+                defectCount: equipment.totalDefects,
+                defectRate: equipment.totalNetdie > 0 ? ((equipment.totalDefects / equipment.totalNetdie) * 100).toFixed(2) : '0.00',
+                ratio: totalDefects > 0 ? ((equipment.totalDefects / totalDefects) * 100).toFixed(1) : '0.0',
+                status: equipment.totalNetdie > 0 && ((equipment.totalDefects / equipment.totalNetdie) * 100) >= 2.0 ? 'Warning' : 'Normal'
+            })).sort((a, b) => b.defectRate - a.defectRate);
+        }
+        
+        // 카드별 상세 분석 함수
+        function analyzeCardDetails(lotData) {
+            if (!lotData || lotData.length === 0) {
+                return [];
+            }
+            
+            const cardData = {};
+            let totalDefects = 0;
+            
+            lotData.forEach(item => {
+                const cardId = item.PCID || item.PC_ID || item.PROBE_CARD_ID || item.PROBECARDID || item.CARDID || item.PC || '알수없음';
+                const netdie = Number(item.NETDIE) || 0;
+                
+                const defectCount = 
+                    (Number(item.BURNT) || 0) +
+                    (Number(item.PROBE_DAMAGE) || 0) +
+                    (Number(item.BUMP_DAMAGE) || 0) +
+                    (Number(item.PROBE_MISALIGN) || 0) +
+                    (Number(item.PATTERN_DAMAGE) || 0) +
+                    (Number(item.RAW_MATERIAL) || 0) +
+                    (Number(item.DISCOLOR) || 0) +
+                    (Number(item.NO_PROBE_MARK) || 0) +
+                    (Number(item.FOREIGN_MATERIAL) || 0) +
+                    (Number(item.MISSING_BUMP) || 0) +
+                    (Number(item.BIG_BALL) || 0) +
+                    (Number(item.AG_RICH) || 0);
+                
+                totalDefects += defectCount;
+                
+                if (!cardData[cardId]) {
+                    cardData[cardId] = {
+                        id: cardId,
+                        totalTests: 0,
+                        totalDefects: 0,
+                        totalNetdie: 0
+                    };
+                }
+                
+                cardData[cardId].totalTests += 1;
+                cardData[cardId].totalDefects += defectCount;
+                cardData[cardId].totalNetdie += netdie;
+            });
+            
+            return Object.values(cardData).map(card => ({
+                id: card.id,
+                totalTests: card.totalTests,
+                defectCount: card.totalDefects,
+                defectRate: card.totalNetdie > 0 ? ((card.totalDefects / card.totalNetdie) * 100).toFixed(2) : '0.00',
+                ratio: totalDefects > 0 ? ((card.totalDefects / totalDefects) * 100).toFixed(1) : '0.0',
+                status: card.totalNetdie > 0 && ((card.totalDefects / card.totalNetdie) * 100) >= 2.0 ? 'Warning' : 'Normal'
+            })).sort((a, b) => b.defectRate - a.defectRate);
+        }
+        
+        // 세부 정보 테이블 생성 함수
+        function generateDetailTables(analysisData) {
+            if (!analysisData.lotData || analysisData.lotData.length === 0) {
+                return;
+            }
+            
+            // 1. 불량 유형별 분석
+            const defectTypes = analyzeDefectTypes(analysisData.lotData);
+            
+            // 2. 장비별 분석
+            const equipmentDetails = analyzeEquipmentDetails(analysisData.lotData);
+            
+            // 3. 카드별 분석
+            const cardDetails = analyzeCardDetails(analysisData.lotData);
+            
+            // 불량 유형별 발생률 테이블 생성
+            const defectTypeTableBody = document.getElementById('defectTypeTableBody');
+            if (defectTypeTableBody) {
+                defectTypeTableBody.innerHTML = defectTypes.map(type => {
+                    const severityClass = type.severity === 'High' ? 'bg-red-100 text-red-800' :
+                                         type.severity === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                                         'bg-green-100 text-green-800';
+                    
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs font-medium">${type.name}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs">${type.count}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs">${type.ratio}%</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs font-bold">${type.defectRate}%</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium ${severityClass}">
+                                    ${type.severity}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            // 장비별 분석 테이블 생성
+            const equipmentAnalysisTableBody = document.getElementById('equipmentAnalysisTableBody');
+            if (equipmentAnalysisTableBody) {
+                equipmentAnalysisTableBody.innerHTML = equipmentDetails.map(equipment => {
+                    const statusClass = equipment.status === 'Warning' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+                    
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs font-medium">${equipment.id}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs">${equipment.totalTests}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs">${equipment.defectCount}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs font-bold">${equipment.defectRate}%</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs">${equipment.ratio}%</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium ${statusClass}">
+                                    ${equipment.status}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            // 카드별 분석 테이블 생성
+            const cardAnalysisTableBody = document.getElementById('cardAnalysisTableBody');
+            if (cardAnalysisTableBody) {
+                cardAnalysisTableBody.innerHTML = cardDetails.map(card => {
+                    const statusClass = card.status === 'Warning' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+                    
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs font-medium">${card.id}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs">${card.totalTests}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs">${card.defectCount}</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs font-bold">${card.defectRate}%</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center text-xs">${card.ratio}%</td>
+                            <td class="border border-gray-300 px-3 py-2 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium ${statusClass}">
+                                    ${card.status}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }// LOTID 분석 함수
+        async function analyzeLotDefects() {
+            const lotid = document.getElementById('lotidInput').value.trim();
+            const resultDiv = document.getElementById('analysisResult');
+            const tableBody = document.getElementById('defectAnalysisTableBody');
+            const summaryDiv = document.getElementById('defectSummary');
+            
+            if (!lotid) {
+                alert('LOTID를 입력해주세요.');
+                return;
+            }
+
+            // 데이터가 로드되지 않은 경우 로딩 시도
+            const currentData = window.defectData || defectData;
+            if (!currentData || currentData.length === 0) {
+                try {
+                    console.log('데이터가 없어서 Excel 파일에서 로딩 시도...');
+                    await loadExcelDataInBrowser();
+                } catch (error) {
+                    alert('데이터 로딩에 실패했습니다. Excel 파일(OnePointRaw.xlsx)을 확인해주세요.');
+                    console.error('Excel 로딩 오류:', error);
+                    return;
+                }
+            }
+            
+            // 최종 데이터 확인
+            const finalData = window.defectData || defectData;
+            if (!finalData || finalData.length === 0) {
+                alert('데이터가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
+                return;
+            }
+            
+            // 실제 데이터에서 해당 LOTID 검색
+            const analysisData = analyzeRealLotData(lotid);
+            
+            if (!analysisData.found) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="border border-gray-300 px-4 py-8 text-center">
+                            <div class="text-yellow-600">
+                                <i class="ri-alert-line text-2xl mb-2"></i>
+                                <p class="font-medium">해당 LOTID를 찾을 수 없습니다: <strong>${lotid}</strong></p>
+                                <p class="text-sm mt-2">사용 가능한 LOTID 예시: ${analysisData.availableLots.slice(0, 3).join(', ')}</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                summaryDiv.innerHTML = '';
+                resultDiv.classList.remove('hidden');
+                return;
+            }
+              // 불량 원인 분석 표 데이터 생성
+            const defectAnalysisRows = generateDefectAnalysisRows(analysisData);
+            const equipmentCardAnalysis = analyzeEquipmentAndCard(analysisData.lotData);
+            
+            // 표 본문 업데이트
+            tableBody.innerHTML = defectAnalysisRows;
+            
+            // 불량 요인 결정 (요약용)
+            let defectFactorSummary;
+            if (equipmentCardAnalysis.equipmentCount > 1 && equipmentCardAnalysis.cardCount === 1) {
+                defectFactorSummary = "카드 원인";
+            } else if (equipmentCardAnalysis.equipmentCount === 1 && equipmentCardAnalysis.cardCount > 1) {
+                defectFactorSummary = "장비 원인";
+            } else {
+                defectFactorSummary = "기타";
+            }
+            
+            // 요약 정보 업데이트
+            summaryDiv.innerHTML = `
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h5 class="font-semibold text-blue-800 mb-2 flex items-center">
+                        <i class="ri-information-line mr-2"></i>
+                        기본 정보
+                    </h5>
+                    <p class="text-sm"><strong>LOTID:</strong> ${analysisData.lotid}</p>
+                    <p class="text-sm"><strong>총 테스트:</strong> ${analysisData.totalTests}건</p>
+                    <p class="text-sm"><strong>총 불량 칩:</strong> ${analysisData.totalDefects}건</p>
+                    <p class="text-sm"><strong>실제 평균 불량율:</strong> ${calculateActualDefectRate(analysisData.lotData).toFixed(2)}%</p>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <h5 class="font-semibold text-orange-800 mb-2 flex items-center">
+                        <i class="ri-settings-line mr-2"></i>
+                        장비/카드 분석
+                    </h5>
+                    <p class="text-sm"><strong>관련 장비 수:</strong> ${equipmentCardAnalysis.equipmentCount}개</p>
+                    <p class="text-sm"><strong>관련 카드 수:</strong> ${equipmentCardAnalysis.cardCount}개</p>
+                    <p class="text-sm"><strong>불량 요인:</strong> <span class="font-bold text-orange-700">${defectFactorSummary}</span></p>
+                    ${equipmentCardAnalysis.equipmentList.length > 0 ? 
+                        `<p class="text-xs mt-1"><strong>장비:</strong> ${equipmentCardAnalysis.equipmentList.slice(0, 3).join(', ')}${equipmentCardAnalysis.equipmentList.length > 3 ? ' 외 ' + (equipmentCardAnalysis.equipmentList.length - 3) + '개' : ''}</p>` : ''
+                    }
+                    ${equipmentCardAnalysis.cardList.length > 0 ? 
+                        `<p class="text-xs mt-1"><strong>카드:</strong> ${equipmentCardAnalysis.cardList.slice(0, 3).join(', ')}${equipmentCardAnalysis.cardList.length > 3 ? ' 외 ' + (equipmentCardAnalysis.cardList.length - 3) + '개' : ''}</p>` : ''
+                    }
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <h5 class="font-semibold text-green-800 mb-2 flex items-center">
+                        <i class="ri-lightbulb-line mr-2"></i>
+                        분석 결과
+                    </h5>
+                    <p class="text-sm">실제 LOT 데이터를 기반으로 불량율이 계산되었습니다.</p>
+                    <p class="text-sm">장비와 카드 정보를 분석하여 불량 요인을 분류했습니다.</p>
+                    <p class="text-sm mt-2"><strong>분석 일자:</strong> ${analysisData.date}</p>
+                </div>            `;
+            
+            // 세부 정보 테이블 생성
+            generateDetailTables(analysisData);
+            
+            resultDiv.classList.remove('hidden');            // 분석 성공 시 infographic.html 로드
+            if (analysisData && analysisData.found) {
+                // 불량 요인 결정
+                const equipmentCardAnalysis = analyzeEquipmentAndCard(analysisData.lotData);
+                let defectFactor;
+                if (equipmentCardAnalysis.equipmentCount > 1 && equipmentCardAnalysis.cardCount === 1) {
+                    defectFactor = "카드 원인";
+                } else if (equipmentCardAnalysis.equipmentCount === 1 && equipmentCardAnalysis.cardCount > 1) {
+                    defectFactor = "장비 원인";
+                } else {
+                    defectFactor = "기타";
+                }
+                
+                // Risk Level 및 조치사항 결정
+                const defectRate = calculateActualDefectRate(analysisData.lotData);
+                const totalSlots = analysisData.lotData.length;
+                let riskLevel, interlockAction;
+                
+                if (defectRate >= 3.0 && totalSlots >= 3) {
+                    riskLevel = "Critical";
+                    interlockAction = "동일 제품 전설비 Stop";
+                } else if (defectRate >= 3.0 && totalSlots >= 1) {
+                    riskLevel = "High";
+                    interlockAction = "대상 카드/설비 즉시 Stop";
+                } else if (defectRate >= 2.0 && totalSlots >= 2) {
+                    riskLevel = "Medium";
+                    interlockAction = "대상 설비 Monitoring 진행";
+                } else if (defectRate >= 2.0 && totalSlots >= 1) {
+                    riskLevel = "Low";
+                    interlockAction = "분석 Report Mail 송부";
+                } else {
+                    riskLevel = "Normal";
+                    interlockAction = "모니터링 지속";
+                }
+                
+                // infographic.html에 전달할 데이터 준비
+                const infographicData = {
+                    ...analysisData,
+                    rootCause: defectFactor,
+                    riskLevel: riskLevel,
+                    recommendations: [interlockAction]
+                };
+                
+                // localStorage에 데이터 저장
+                try {
+                    localStorage.setItem('infographicAnalysisData', JSON.stringify(infographicData));
+                    console.log('infographic 데이터 저장 완료:', infographicData);
+                } catch (e) {
+                    console.warn('infographicAnalysisData 저장 실패:', e);
+                }
+                
+                // infographic.html을 iframe에 로드
+                const iframe = document.getElementById('infographicFrame');
+                if (iframe) {
+                    // LOTID를 쿼리스트링으로 전달 (필요시)
+                    iframe.src = `infographic.html?lotid=${encodeURIComponent(analysisData.lotid)}`;
+                }
+            }
+        }
+
+        // 리포트 생성 함수 - 입력된 LOTID를 쿼리스트링으로 전달
+        function generateReport() {
+            const lotidInput = document.getElementById('reportLotidInput');
+            const lotid = lotidInput.value.trim();
+            
+            if (!lotid) {
+                alert('LOTID를 입력해주세요.');
+                lotidInput.focus();
+                return;
+            }
+            
+            // defectData를 localStorage에 저장 (Report.html에서 사용)
+            if (window.defectData && window.defectData.length > 0) {
+                localStorage.setItem('defectData', JSON.stringify(window.defectData));
+                console.log('index2.html - Saved defectData to localStorage:', window.defectData.length, 'items');
+            } else {
+                console.log('index2.html - No defectData found in window');
+            }
+            
+            // Report.html로 이동하며 LOTID를 쿼리스트링으로 전달
+            window.location.href = `Report.html?lotid=${encodeURIComponent(lotid)}`;
+        }
+        
+        // 캡처 함수 추가 (html2canvas 사용)
+        async function captureFullPage() {
+            const mainContent = document.getElementById('mainContent');
+            if (!mainContent) {
+                alert('캡처할 영역을 찾을 수 없습니다.');
+                return;
+            }
+            // 캡처 중 안내
+            const prevBtnText = document.getElementById('fullPageCapture').innerHTML;
+            document.getElementById('fullPageCapture').innerHTML = '<i class="ri-loader-4-line animate-spin"></i> 캡처중...';
+            document.getElementById('fullPageCapture').disabled = true;
+
+            try {
+                // 스크롤을 최상단으로 이동 (전체 영역 캡처)
+                window.scrollTo(0, 0);
+                // 캡처
+                const canvas = await html2canvas(mainContent, {
+                    useCORS: true,
+                    backgroundColor: null,
+                    scale: 2
+                });
+                const imgData = canvas.toDataURL('image/png');
+                // 다운로드
+                const link = document.createElement('a');
+                link.href = imgData;
+                link.download = 'OnePoint_Analytics_Capture.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (e) {
+                alert('캡처에 실패했습니다: ' + e.message);
+            } finally {
+                document.getElementById('fullPageCapture').innerHTML = prevBtnText;
+                document.getElementById('fullPageCapture').disabled = false;
+            }
+        }
+    </script>
+    
+    <!-- CSS 애니메이션 추가 -->
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    
+    <!-- renderer.js 포함 - 실제 데이터 사용을 위해 -->
+    <script src="renderer.js"></script>
+    <!-- SheetJS 라이브러리 추가 (브라우저에서 Excel 파일 읽기용) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <script>        // Excel 파일을 브라우저에서 로딩하는 함수 (Electron API 사용)
+        async function loadExcelDataInBrowser() {
+            try {
+                console.log('Excel 데이터 로딩 시작...');
+                
+                // Electron API가 있는지 확인
+                if (window.electronAPI && window.electronAPI.readExcelFile) {
+                    console.log('Electron API를 사용하여 Excel 파일 로딩...');
+                    const jsonData = await window.electronAPI.readExcelFile('OnePointRaw.xlsx');
+                    
+                    if (jsonData && jsonData.length > 0) {
+                        // 전역 변수에 저장
+                        window.defectData = jsonData;
+                        defectData = jsonData;
+                        
+                        console.log('Excel 데이터 로딩 완료 (Electron API):', jsonData.length, '행');
+                        console.log('첫 번째 행 샘플:', jsonData[0]);
+                        return jsonData;
+                    } else {
+                        throw new Error('Excel 데이터가 비어있습니다.');
+                    }
+                } else {
+                    // Electron API가 없으면 브라우저 방식 사용 (개발 환경용)
+                    console.log('Electron API를 찾을 수 없음. 브라우저 방식으로 시도...');
+                    const response = await fetch('OnePointRaw.xlsx');
+                    
+                    if (!response.ok) {
+                        throw new Error(`파일을 찾을 수 없습니다: ${response.status}`);
+                    }
+                    
+                    const arrayBuffer = await response.arrayBuffer();
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    // 전역 변수에 저장
+                    window.defectData = jsonData;
+                    defectData = jsonData;
+                    
+                    console.log('Excel 데이터 로딩 완료 (브라우저):', jsonData.length, '행');
+                    return jsonData;
+                }
+            } catch (error) {
+                console.error('Excel 파일 로딩 실패:', error);
+                console.error('상세 오류:', error.message);
+                throw error;
+            }
+        }        // 페이지 로드 시 Excel 데이터 자동 로딩 시도
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('=== index2.html 페이지 로드 시작 ===');
+            console.log('Electron API 사용 가능:', !!window.electronAPI);
+            console.log('readExcelFile API 사용 가능:', !!(window.electronAPI && window.electronAPI.readExcelFile));
+            
+            try {
+                await loadExcelDataInBrowser();
+                console.log('페이지 로드 시 Excel 데이터 자동 로딩 완료');
+                
+                // 데이터 로딩 후 UI 업데이트
+                if (window.defectData && window.defectData.length > 0) {
+                    console.log('불량 원인 분석, 마인드맵 분석, Reports 데이터 준비 완료');
+                    console.log('총 데이터 행 수:', window.defectData.length);
+                    
+                    // Analytics 관련 데이터 확인
+                    const analyticsData = window.defectData.filter(row => {
+                        const values = Object.values(row);
+                        return values.some(value => 
+                            value && value.toString().toLowerCase().includes('analytics')
+                        );
+                    });
+                    console.log('Analytics 관련 데이터 행 수:', analyticsData.length);
+                } else {
+                    console.warn('Excel 데이터가 비어있어서 분석을 수행할 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('자동 로딩 실패, 수동으로 로딩해야 합니다:', error);
+                
+                // 사용자에게 오류 메시지 표시
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+                errorDiv.innerHTML = `
+                    <strong>데이터 로딩 오류:</strong> ${error.message}<br>
+                    <small>Excel 파일을 찾을 수 없거나 읽을 수 없습니다. 개발자에게 문의하세요.</small>
+                `;
+                
+                const mainContent = document.getElementById('mainContent');
+                if (mainContent) {
+                    mainContent.insertBefore(errorDiv, mainContent.firstChild);
+                }
+            }
+        });
+        
+        // 데이터 로딩 함수 추가
+        function loadAnalyticsData() {
+            // Excel 파일에서 데이터 로드 시도
+            fetch('OnePointRaw.xlsx')
+                .then(response => response.arrayBuffer())
+                .then(data => {
+                    // Excel 파일 처리 로직이 있다면 여기에 추가
+                    console.log('Excel 파일 로드 완료');
+                })
+                .catch(error => {
+                    console.log('Excel 파일 로드 실패:', error);
+                    // 기본 데이터 생성
+                    createSampleData();
+                });
+        }
+        
+        // 샘플 데이터 생성 함수
+        function createSampleData() {
+            const sampleData = [
+                { LOT: 'A327GA', DEVICE: 'UTSC51', NETDIE: 1000, PROBE_DAMAGE: 28, BURNT: 5, BUMP_DAMAGE: 2 },
+                { LOT: 'F2KC3', DEVICE: 'UTSC41', NETDIE: 800, PROBE_DAMAGE: 15, BURNT: 3, BUMP_DAMAGE: 1 },
+                { LOT: 'B123XY', DEVICE: 'UTSC56', NETDIE: 1200, PROBE_DAMAGE: 30, BURNT: 8, BUMP_DAMAGE: 4 }
+            ];
+            
+            window.defectData = sampleData;
+            console.log('샘플 데이터 생성:', window.defectData);
+        }
+    </script>
+</body>
+</html>

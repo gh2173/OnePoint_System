@@ -1,0 +1,15 @@
+# Node.js
+node_modules/
+dist/
+build/
+builder/
+
+# 임시 / 캐시
+.cache/
+tmp/
+
+# 엑셀 파일
+xlsx/
+OnePoint.zip
+electron-builder
+.DS_Store
