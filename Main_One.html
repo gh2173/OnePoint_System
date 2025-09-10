@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <!-- SECTION #1: HTML Head Configuration -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>One Point System - Quality Automation Management System</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SECTION #2: CSS Styles -->
     <style>
         * {
             margin: 0;
@@ -396,36 +394,17 @@
                 height: 16px;
             }
         }
-
-        /* Section Tags for Reference (Temporary) */
-        .section-tag {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(255, 255, 255, 0.8);
-            color: #666;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-weight: bold;
-            z-index: 1000;
-            border: 1px solid #ddd;
-        }
     </style>
 </head>
 <body>
-    <!-- SECTION #3: Page Header -->
-    <div class="header" style="position: relative;">
-        <div class="section-tag">#3</div>
+    <div class="header">
         <h1>One Point System</h1>
         <h2>Quality Automation Management System</h2>
     </div>
 
     <div class="main-layout">
-        <!-- SECTION #4: Sidebar Navigation -->
         <!-- 좌측 네비게이션 -->
-        <div class="sidebar" style="position: relative;">
-            <div class="section-tag">#4</div>
+        <div class="sidebar">
             <div class="nav-item active" data-page="main">
                 <div class="nav-icon">
                     <svg viewBox="0 0 24 24">
@@ -476,14 +455,10 @@
             </div>
         </div>
 
-        <!-- SECTION #5: Main Content Area -->
         <!-- 메인 컨텐츠 영역 -->
-        <div class="container" style="position: relative;">
-            <div class="section-tag">#5</div>
-            <!-- SECTION #6: Trend Chart Container -->
+        <div class="container">
             <!-- 월별 불량률 트렌드 차트 -->
             <div class="chart-container trend-chart">
-                <div class="section-tag">#6</div>
                 <div class="chart-title">TEST 공정 기간별 불량현황 (신규구성)</div>
                 <div class="status-info">Nepes Ark OGI 불량 Status</div>
                 <div class="chart-canvas">
@@ -491,22 +466,17 @@
                 </div>
             </div>
 
-            <!-- SECTION #7: Pie Chart Container -->
             <!-- 불량 유형 분포 파이 차트 -->
             <div class="chart-container pie-chart">
-                <div class="section-tag">#7</div>
                 <div class="chart-title">불량 유형 분포</div>
                 <div class="chart-canvas">
                     <canvas id="pieChart"></canvas>
                 </div>
             </div>
 
-            <!-- SECTION #8: Bottom Charts Container -->
             <!-- 하단 Top3 발생량 상세 차트들 -->
-            <div class="bottom-charts" style="position: relative;">
-                <div class="section-tag">#8</div>
+            <div class="bottom-charts">
                 <div class="chart-container">
-                    <div class="section-tag">#8a</div>
                     <div class="chart-title">Burnt</div>
                     <div class="bottom-chart-canvas">
                         <canvas id="burntChart"></canvas>
@@ -514,7 +484,6 @@
                 </div>
                 
                 <div class="chart-container">
-                    <div class="section-tag">#8b</div>
                     <div class="chart-title">Probe Damage</div>
                     <div class="bottom-chart-canvas">
                         <canvas id="probeDamageChart"></canvas>
@@ -522,7 +491,6 @@
                 </div>
                 
                 <div class="chart-container">
-                    <div class="section-tag">#8c</div>
                     <div class="chart-title">Particle</div>
                     <div class="bottom-chart-canvas">
                         <canvas id="particleChart"></canvas>
@@ -532,9 +500,7 @@
         </div>
     </div>
 
-    <!-- SECTION #9: JavaScript Code -->
     <script>
-        // SECTION #10: Global Variables and Configuration
         // 전역 변수
         let excelData = [];
         let charts = {};
@@ -563,7 +529,6 @@
             others: '#6B7280'       // 회색
         };
 
-        // SECTION #11: Mock Data Generation
         // 임시 데이터 생성 (이미지 기반)
         function generateMockData() {
             return [
@@ -579,7 +544,6 @@
             ];
         }
 
-        // SECTION #12: Data Processing Functions
         // Excel 데이터 전처리
         function processExcelData() {
             console.log('데이터 전처리 시작');
@@ -632,7 +596,6 @@
             return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
         }
 
-        // SECTION #13: Data Aggregation Functions
         // 기간별 불량율 집계 함수
         function aggregateDefectRatesByPeriod(data) {
             const { selectedMonths, selectedWeeks, selectedDays } = currentFilters;
@@ -748,7 +711,6 @@
             return colorMap[defectType] || '#6B7280';
         }
 
-        // SECTION #14: Chart Configuration and 3D Plugin
         // 차트 기본 설정
         Chart.defaults.font.family = 'Arial, Malgun Gothic, sans-serif';
         Chart.defaults.font.size = 11;
@@ -1021,7 +983,6 @@
         // 플러그인 등록
         Chart.register(threeDPlugin);
 
-        // SECTION #15: Page Initialization
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('One Point System 대시보드 로드 시작');
@@ -1050,7 +1011,6 @@
             }
         });
 
-        // SECTION #16: Excel Data Loading Functions
         // Excel 데이터 로드
         async function loadExcelData() {
             try {
@@ -1166,7 +1126,6 @@
             return equipmentData;
         }
 
-        // SECTION #17: Chart Initialization
         // 차트 초기화
         function initializeCharts() {
             console.log('차트 초기화 시작');
@@ -1183,7 +1142,6 @@
             createRealTopNCharts();
         }
 
-        // SECTION #18: Trend Chart Creation
         // 실제 데이터 기반 트렌드 차트
         function createRealTrendChart() {
             const ctx = document.getElementById('trendChart').getContext('2d');
@@ -1243,7 +1201,6 @@
             });
         }
 
-        // SECTION #19: Pie Chart Creation
         // 실제 데이터를 사용한 파이 차트 생성 (불량 유형별 비율)
         function createRealPieChart() {
             const pieCtx = document.getElementById('pieChart').getContext('2d');
@@ -1356,7 +1313,6 @@
             });
         }
 
-        // SECTION #20: Top N Charts Creation
         // 실제 데이터 기반 Top N 차트들 생성
         function createRealTopNCharts() {
             const topN = currentFilters.topN;
@@ -1471,7 +1427,6 @@
             });
         }
 
-        // SECTION #21: Legacy Chart Functions (Deprecated)
         // 상세 차트 생성 (장비별) - 하드코딩 버전 (사용 안함)
         function createDetailChart(canvasId, defectType, title) {
             const ctx = document.getElementById(canvasId).getContext('2d');
@@ -1559,7 +1514,6 @@
             });
         }
 
-        // SECTION #22: Data Update and Refresh Functions
         // 실시간 데이터 업데이트 설정
         function setupDataUpdates() {
             // 30초마다 데이터 새로고침 (실제 환경에서만)
@@ -1597,7 +1551,6 @@
             });
         }
 
-        // SECTION #23: Navigation and Event Handlers
         // 네비게이션 클릭 이벤트 핸들러
         function setupNavigation() {
             const navItems = document.querySelectorAll('.nav-item');
