@@ -504,6 +504,20 @@
         // 전역 변수
         let excelData = [];
         let charts = {};
+        let filteredData = [];
+        let currentFilters = {
+            selectedMonths: [6, 7, 8],
+            selectedWeeks: [29, 30, 31],
+            selectedDays: [25, 26, 27, 28, 29],
+            topN: 3
+        };
+
+        // 불량 유형 컬럼 정의
+        const DEFECT_COLUMNS = [
+            'BURNT', 'PROBE_DAMAGE', 'BUMP_DAMAGE', 'PROBE_MISALIGN', 
+            'PATTERN_DAMAGE', 'RAW_MATERIAL', 'DISCOLOR', 'NO_PROBE_MARK', 
+            'FOREIGN_MATERIAL', 'MISSING_BUMP', 'BIG_BALL', 'AG_RICH'
+        ];
 
         // 색상 팔레트 (이미지와 동일한 색상)
         const colors = {
@@ -518,16 +532,183 @@
         // 임시 데이터 생성 (이미지 기반)
         function generateMockData() {
             return [
-                { '날짜': '25년 06월 10일', 'EQP_ID': 'S5E8535', 'PROBE_DAMAGE': 33, 'BURNT': 36, 'PATTERN_DAMAGE': 11, 'BUMP_DAMAGE': 6, 'RAW_MATERIAL': 14, 'CUR_QTY': 2500 },
-                { '날짜': '25년 07월 15일', 'EQP_ID': 'S5E8845', 'PROBE_DAMAGE': 30, 'BURNT': 38, 'PATTERN_DAMAGE': 12, 'BUMP_DAMAGE': 5, 'RAW_MATERIAL': 15, 'CUR_QTY': 2300 },
-                { '날짜': '25년 08월 20일', 'EQP_ID': 'S5E5535', 'PROBE_DAMAGE': 35, 'BURNT': 34, 'PATTERN_DAMAGE': 10, 'BUMP_DAMAGE': 7, 'RAW_MATERIAL': 14, 'CUR_QTY': 2800 },
-                { '날짜': '25년 29월 25일', 'EQP_ID': 'S6M5525', 'PROBE_DAMAGE': 32, 'BURNT': 40, 'PATTERN_DAMAGE': 9, 'BUMP_DAMAGE': 6, 'RAW_MATERIAL': 13, 'CUR_QTY': 3000 },
-                { '날짜': '25년 26월 30일', 'EQP_ID': 'S5E8535', 'PROBE_DAMAGE': 28, 'BURNT': 42, 'PATTERN_DAMAGE': 13, 'BUMP_DAMAGE': 4, 'RAW_MATERIAL': 13, 'CUR_QTY': 3200 },
-                { '날짜': '25년 27월 05일', 'EQP_ID': 'S5E8845', 'PROBE_DAMAGE': 31, 'BURNT': 39, 'PATTERN_DAMAGE': 11, 'BUMP_DAMAGE': 5, 'RAW_MATERIAL': 14, 'CUR_QTY': 2900 },
-                { '날짜': '25년 28월 10일', 'EQP_ID': 'S5E5535', 'PROBE_DAMAGE': 34, 'BURNT': 35, 'PATTERN_DAMAGE': 12, 'BUMP_DAMAGE': 6, 'RAW_MATERIAL': 13, 'CUR_QTY': 2600 },
-                { '날짜': '25년 29월 15일', 'EQP_ID': 'S6M5525', 'PROBE_DAMAGE': 29, 'BURNT': 41, 'PATTERN_DAMAGE': 10, 'BUMP_DAMAGE': 7, 'RAW_MATERIAL': 13, 'CUR_QTY': 3500 },
-                { '날짜': '25년 30월 20일', 'EQP_ID': 'S5E8535', 'PROBE_DAMAGE': 33, 'BURNT': 37, 'PATTERN_DAMAGE': 11, 'BUMP_DAMAGE': 5, 'RAW_MATERIAL': 14, 'CUR_QTY': 3800 }
+                { '날짜': '2024-06-10', 'EQP_ID': 'S5E8535', 'PROBE_DAMAGE': 33, 'BURNT': 36, 'PATTERN_DAMAGE': 11, 'BUMP_DAMAGE': 6, 'RAW_MATERIAL': 14, 'NETDIE': 5000, 'CUR_QTY': 2500 },
+                { '날짜': '2024-07-15', 'EQP_ID': 'S5E8845', 'PROBE_DAMAGE': 30, 'BURNT': 38, 'PATTERN_DAMAGE': 12, 'BUMP_DAMAGE': 5, 'RAW_MATERIAL': 15, 'NETDIE': 4800, 'CUR_QTY': 2300 },
+                { '날짜': '2024-08-20', 'EQP_ID': 'S5E5535', 'PROBE_DAMAGE': 35, 'BURNT': 34, 'PATTERN_DAMAGE': 10, 'BUMP_DAMAGE': 7, 'RAW_MATERIAL': 14, 'NETDIE': 5200, 'CUR_QTY': 2800 },
+                { '날짜': '2024-07-22', 'EQP_ID': 'S6M5525', 'PROBE_DAMAGE': 32, 'BURNT': 40, 'PATTERN_DAMAGE': 9, 'BUMP_DAMAGE': 6, 'RAW_MATERIAL': 13, 'NETDIE': 5500, 'CUR_QTY': 3000 },
+                { '날짜': '2024-07-29', 'EQP_ID': 'S5E8535', 'PROBE_DAMAGE': 28, 'BURNT': 42, 'PATTERN_DAMAGE': 13, 'BUMP_DAMAGE': 4, 'RAW_MATERIAL': 13, 'NETDIE': 4900, 'CUR_QTY': 3200 },
+                { '날짜': '2024-08-05', 'EQP_ID': 'S5E8845', 'PROBE_DAMAGE': 31, 'BURNT': 39, 'PATTERN_DAMAGE': 11, 'BUMP_DAMAGE': 5, 'RAW_MATERIAL': 14, 'NETDIE': 5100, 'CUR_QTY': 2900 },
+                { '날짜': '2024-08-26', 'EQP_ID': 'S5E5535', 'PROBE_DAMAGE': 34, 'BURNT': 35, 'PATTERN_DAMAGE': 12, 'BUMP_DAMAGE': 6, 'RAW_MATERIAL': 13, 'NETDIE': 4700, 'CUR_QTY': 2600 },
+                { '날짜': '2024-08-27', 'EQP_ID': 'S6M5525', 'PROBE_DAMAGE': 29, 'BURNT': 41, 'PATTERN_DAMAGE': 10, 'BUMP_DAMAGE': 7, 'RAW_MATERIAL': 13, 'NETDIE': 4600, 'CUR_QTY': 3500 },
+                { '날짜': '2024-08-28', 'EQP_ID': 'S5E8535', 'PROBE_DAMAGE': 33, 'BURNT': 37, 'PATTERN_DAMAGE': 11, 'BUMP_DAMAGE': 5, 'RAW_MATERIAL': 14, 'NETDIE': 5300, 'CUR_QTY': 3800 }
             ];
+        }
+
+        // Excel 데이터 전처리
+        function processExcelData() {
+            console.log('데이터 전처리 시작');
+            
+            excelData.forEach(row => {
+                // 날짜 파싱 및 기간 추출
+                if (row['날짜']) {
+                    const date = new Date(row['날짜']);
+                    row.parsedDate = date;
+                    row.year = date.getFullYear();
+                    row.month = date.getMonth() + 1;
+                    row.week = getWeekNumber(date);
+                    row.day = date.getDate();
+                }
+                
+                // 불량율 계산
+                calculateDefectRates(row);
+            });
+            
+            console.log('데이터 전처리 완료:', excelData.length, '건');
+        }
+
+        // 불량율 계산 함수
+        function calculateDefectRates(row) {
+            const netdie = parseFloat(row.NETDIE) || 0;
+            
+            if (netdie > 0) {
+                DEFECT_COLUMNS.forEach(defectType => {
+                    const defectCount = parseFloat(row[defectType]) || 0;
+                    row[defectType + '_RATE'] = (defectCount / netdie) * 100;
+                });
+                
+                // 총 불량율 계산
+                const totalDefects = DEFECT_COLUMNS.reduce((sum, defectType) => {
+                    return sum + (parseFloat(row[defectType]) || 0);
+                }, 0);
+                row.TOTAL_DEFECT_RATE = (totalDefects / netdie) * 100;
+            } else {
+                DEFECT_COLUMNS.forEach(defectType => {
+                    row[defectType + '_RATE'] = 0;
+                });
+                row.TOTAL_DEFECT_RATE = 0;
+            }
+        }
+
+        // 주 번호 계산 함수
+        function getWeekNumber(date) {
+            const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+            const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+            return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        }
+
+        // 기간별 불량율 집계 함수
+        function aggregateDefectRatesByPeriod(data) {
+            const { selectedMonths, selectedWeeks, selectedDays } = currentFilters;
+            
+            // 기존 하드코딩 레이아웃 유지: 월 3개, 주 3개, 일 5개 고정
+            const fixedPeriods = [
+                '6월', '7월', '8월',           // 월 섹션
+                '29주', '30주', '31주',        // 주 섹션  
+                '25일', '26일', '27일', '28일', '29일'  // 일 섹션
+            ];
+            
+            // 기간별 데이터 그룹화
+            const groupedData = {};
+            fixedPeriods.forEach(periodLabel => {
+                groupedData[periodLabel] = {
+                    defectTotals: {},
+                    netdieTotal: 0
+                };
+                
+                DEFECT_COLUMNS.forEach(defectType => {
+                    groupedData[periodLabel].defectTotals[defectType] = 0;
+                });
+            });
+            
+            // 데이터 집계 - 필터에 따라 해당 기간만 적용
+            data.forEach(row => {
+                // 월 데이터 처리
+                if (selectedMonths.includes(row.month)) {
+                    const monthLabel = `${row.month}월`;
+                    if (groupedData[monthLabel]) {
+                        const netdie = parseFloat(row.NETDIE) || 0;
+                        groupedData[monthLabel].netdieTotal += netdie;
+                        
+                        DEFECT_COLUMNS.forEach(defectType => {
+                            const defectCount = parseFloat(row[defectType]) || 0;
+                            groupedData[monthLabel].defectTotals[defectType] += defectCount;
+                        });
+                    }
+                }
+                
+                // 주 데이터 처리 
+                if (selectedWeeks.includes(row.week)) {
+                    const weekLabel = `${row.week}주`;
+                    if (groupedData[weekLabel]) {
+                        const netdie = parseFloat(row.NETDIE) || 0;
+                        groupedData[weekLabel].netdieTotal += netdie;
+                        
+                        DEFECT_COLUMNS.forEach(defectType => {
+                            const defectCount = parseFloat(row[defectType]) || 0;
+                            groupedData[weekLabel].defectTotals[defectType] += defectCount;
+                        });
+                    }
+                }
+                
+                // 일 데이터 처리
+                if (selectedDays.includes(row.day)) {
+                    const dayLabel = `${row.day}일`;
+                    if (groupedData[dayLabel]) {
+                        const netdie = parseFloat(row.NETDIE) || 0;
+                        groupedData[dayLabel].netdieTotal += netdie;
+                        
+                        DEFECT_COLUMNS.forEach(defectType => {
+                            const defectCount = parseFloat(row[defectType]) || 0;
+                            groupedData[dayLabel].defectTotals[defectType] += defectCount;
+                        });
+                    }
+                }
+            });
+            
+            // 불량율 계산 및 데이터셋 생성
+            const datasets = [];
+            const mainDefectTypes = ['PROBE_DAMAGE', 'BURNT', 'PATTERN_DAMAGE', 'BUMP_DAMAGE', 'RAW_MATERIAL'];
+            
+            mainDefectTypes.forEach(defectType => {
+                const chartData = fixedPeriods.map(periodLabel => {
+                    const group = groupedData[periodLabel];
+                    if (group && group.netdieTotal > 0) {
+                        return (group.defectTotals[defectType] / group.netdieTotal) * 100;
+                    }
+                    return 0;
+                });
+                
+                datasets.push({
+                    label: getDefectTypeDisplayName(defectType),
+                    data: chartData,
+                    backgroundColor: getDefectTypeColor(defectType),
+                    borderWidth: 0
+                });
+            });
+            
+            return { periods: fixedPeriods, datasets };
+        }
+
+        function getDefectTypeDisplayName(defectType) {
+            const displayNames = {
+                'BURNT': 'Burnt',
+                'PROBE_DAMAGE': 'Probe Damage',
+                'BUMP_DAMAGE': 'Bump Damage', 
+                'PATTERN_DAMAGE': 'Pattern Damage',
+                'RAW_MATERIAL': 'Raw Material'
+            };
+            return displayNames[defectType] || defectType;
+        }
+
+        function getDefectTypeColor(defectType) {
+            const colorMap = {
+                'BURNT': '#F18F01',
+                'PROBE_DAMAGE': '#2E86AB',
+                'BUMP_DAMAGE': '#4CAF50',
+                'PATTERN_DAMAGE': '#E91E63',
+                'RAW_MATERIAL': '#9C27B0'
+            };
+            return colorMap[defectType] || '#6B7280';
         }
 
         // 차트 기본 설정
@@ -949,62 +1130,30 @@
         function initializeCharts() {
             console.log('차트 초기화 시작');
             
-            // 월별 트렌드 차트
-            createTrendChart();
+            // 데이터 전처리
+            processExcelData();
             
-            // 파이 차트
-            createPieChart();
+            // 필터된 데이터 설정
+            filteredData = excelData;
             
-            // 하단 상세 차트들
-            createDetailChart('burntChart', 'burnt', 'Burnt');
-            createDetailChart('probeDamageChart', 'probe_damage', 'Probe Damage');
-            createDetailChart('particleChart', 'particle', 'Particle');
+            // 실제 데이터 기반 차트 생성
+            createRealTrendChart();
+            createRealPieChart();
+            createRealTopNCharts();
         }
 
-        // 월별 트렌드 스택 바 차트 생성
-        function createTrendChart() {
+        // 실제 데이터 기반 트렌드 차트
+        function createRealTrendChart() {
             const ctx = document.getElementById('trendChart').getContext('2d');
-            const monthlyData = aggregateMonthlyData(excelData);
             
-            const months = ['6월', '7월', '8월', '29월', '30월']; // 기본 월 데이터
-            const datasets = [
-                {
-                    label: 'Probemark Damage',
-                    data: [2.8, 3.2, 4.1, 4.9, 5.8],
-                    backgroundColor: colors.probemark,
-                    borderWidth: 0
-                },
-                {
-                    label: 'Burnt',
-                    data: [3.5, 3.8, 4.2, 4.6, 5.2],
-                    backgroundColor: colors.burnt,
-                    borderWidth: 0
-                },
-                {
-                    label: 'Scratch',
-                    data: [1.2, 1.8, 2.1, 2.8, 3.2],
-                    backgroundColor: colors.scratch,
-                    borderWidth: 0
-                },
-                {
-                    label: 'Broken',
-                    data: [0.8, 1.2, 1.5, 1.8, 2.1],
-                    backgroundColor: colors.broken,
-                    borderWidth: 0
-                },
-                {
-                    label: 'Particle',
-                    data: [1.5, 2.1, 2.8, 3.2, 3.8],
-                    backgroundColor: colors.particle,
-                    borderWidth: 0
-                }
-            ];
-
+            // 필터링된 데이터에서 기간별 불량율 집계
+            const aggregatedData = aggregateDefectRatesByPeriod(filteredData);
+            
             charts.trendChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: months,
-                    datasets: datasets
+                    labels: aggregatedData.periods,
+                    datasets: aggregatedData.datasets
                 },
                 options: {
                     responsive: true,
@@ -1019,10 +1168,9 @@
                         y: {
                             stacked: true,
                             beginAtZero: true,
-                            max: 12,
                             ticks: {
                                 callback: function(value) {
-                                    return value + '%';
+                                    return value.toFixed(2) + '%';
                                 }
                             },
                             grid: {
@@ -1053,32 +1201,51 @@
             });
         }
 
-        // 파이 차트 생성
-        function createPieChart() {
-            const ctx = document.getElementById('pieChart').getContext('2d');
+        // 실제 데이터를 사용한 파이 차트 생성
+        function createRealPieChart() {
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
             
-            // 이미지와 동일한 비율로 설정
-            const data = [33, 36, 11, 6, 14]; // Probemark Damage 33%, Burnt 36%, Scratch 11%, Broken 6%, Particle 14%
-            const labels = ['Probemark Damage', 'Burnt', 'Scratch', 'Broken', 'Particle'];
-            const backgroundColors = [
-                colors.probemark,
-                colors.burnt,
-                colors.scratch,
-                colors.broken,
-                colors.particle
-            ];
-
-            charts.pieChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: backgroundColors,
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
+            // 필터된 데이터에서 불량 유형별 집계
+            const defectDistribution = {};
+            
+            filteredData.forEach(row => {
+                DEFECT_COLUMNS.forEach(defectType => {
+                    const defectCount = parseFloat(row[defectType]) || 0;
+                    if (!defectDistribution[defectType]) {
+                        defectDistribution[defectType] = 0;
+                    }
+                    defectDistribution[defectType] += defectCount;
+                });
+            });
+            
+            // 불량 유형별 데이터 정리
+            const pieData = {
+                labels: ['PROBE_DAMAGE', 'BURNT', 'PATTERN_DAMAGE', 'BUMP_DAMAGE', 'RAW_MATERIAL', 'Others'],
+                datasets: [{
+                    data: [
+                        defectDistribution.PROBE_DAMAGE || 0,
+                        defectDistribution.BURNT || 0,
+                        defectDistribution.PATTERN_DAMAGE || 0,
+                        defectDistribution.BUMP_DAMAGE || 0,
+                        defectDistribution.RAW_MATERIAL || 0,
+                        (defectDistribution.SOLDER_BALL || 0) + (defectDistribution.ETC || 0)
+                    ],
+                    backgroundColor: [
+                        '#2E86AB',
+                        '#F18F01',
+                        '#E91E63',
+                        '#4CAF50',
+                        '#9C27B0',
+                        '#6B7280'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            };
+            
+            charts.pieChart = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: pieData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -1086,30 +1253,134 @@
                         legend: {
                             position: 'right',
                             labels: {
+                                padding: 20,
                                 usePointStyle: true,
-                                padding: 15,
                                 font: {
-                                    size: 11
-                                },
-                                generateLabels: function(chart) {
-                                    const data = chart.data;
-                                    return data.labels.map((label, index) => {
-                                        const value = data.datasets[0].data[index];
-                                        return {
-                                            text: `${label} ${value}%`,
-                                            fillStyle: data.datasets[0].backgroundColor[index],
-                                            hidden: false,
-                                            index: index
-                                        };
-                                    });
+                                    size: 12
                                 }
                             }
                         },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed + '%';
+                        title: {
+                            display: true,
+                            text: '불량 유형 분포',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    cutout: '50%'
+                }
+            });
+        }
+
+        // 실제 데이터 기반 Top N 차트들 생성
+        function createRealTopNCharts() {
+            const topN = currentFilters.topN;
+            
+            // 주요 불량 유형 정의
+            const mainDefectTypes = [
+                { key: 'BURNT', label: 'Burnt', chartId: 'burntChart' },
+                { key: 'PROBE_DAMAGE', label: 'Probe Damage', chartId: 'probeDamageChart' }, 
+                { key: 'RAW_MATERIAL', label: 'Raw Material', chartId: 'particleChart' }
+            ];
+            
+            mainDefectTypes.forEach(defectType => {
+                createRealTopNChart(defectType.chartId, defectType.key, defectType.label, topN);
+            });
+        }
+        
+        // 개별 Top N 차트 생성
+        function createRealTopNChart(chartId, defectKey, defectLabel, topN) {
+            const ctx = document.getElementById(chartId).getContext('2d');
+            
+            // 장비별 불량율 집계
+            const equipmentData = {};
+            
+            filteredData.forEach(row => {
+                const eqpId = row.EQP_ID || 'Unknown';
+                const netdie = parseFloat(row.NETDIE) || 0;
+                const defectCount = parseFloat(row[defectKey]) || 0;
+                
+                if (!equipmentData[eqpId]) {
+                    equipmentData[eqpId] = {
+                        totalNetdie: 0,
+                        totalDefects: 0
+                    };
+                }
+                
+                equipmentData[eqpId].totalNetdie += netdie;
+                equipmentData[eqpId].totalDefects += defectCount;
+            });
+            
+            // 불량율 계산 및 Top N 선택
+            const equipmentRates = Object.entries(equipmentData)
+                .map(([eqpId, data]) => ({
+                    equipment: eqpId,
+                    rate: data.totalNetdie > 0 ? (data.totalDefects / data.totalNetdie) * 100 : 0
+                }))
+                .sort((a, b) => b.rate - a.rate)
+                .slice(0, topN);
+            
+            const chartData = {
+                labels: equipmentRates.map(item => item.equipment),
+                datasets: [{
+                    data: equipmentRates.map(item => item.rate),
+                    backgroundColor: [
+                        '#FF6B6B',
+                        '#4ECDC4', 
+                        '#45B7D1',
+                        '#96CEB4',
+                        '#FFEAA7'
+                    ].slice(0, topN),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            };
+            
+            charts[chartId] = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: `${defectLabel} Top ${topN}`,
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                font: {
+                                    size: 10
                                 }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(2) + '%';
+                                },
+                                font: {
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                color: '#f0f0f0'
                             }
                         }
                     }
@@ -1117,7 +1388,7 @@
             });
         }
 
-        // 상세 차트 생성 (장비별)
+        // 상세 차트 생성 (장비별) - 하드코딩 버전 (사용 안함)
         function createDetailChart(canvasId, defectType, title) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             
