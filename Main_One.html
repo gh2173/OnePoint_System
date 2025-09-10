@@ -1201,52 +1201,34 @@
             });
         }
 
-        // 실제 데이터를 사용한 파이 차트 생성 (불량 유형별 비율)
+        // 실제 데이터를 사용한 파이 차트 생성
         function createRealPieChart() {
             const pieCtx = document.getElementById('pieChart').getContext('2d');
             
-            // 불량 유형별 총 개수 집계
-            const defectCounts = {};
-            DEFECT_COLUMNS.forEach(defectType => {
-                defectCounts[defectType] = 0;
-            });
+            // 필터된 데이터에서 불량 유형별 집계
+            const defectDistribution = {};
             
-            // 모든 데이터에서 불량 개수 합계
             filteredData.forEach(row => {
                 DEFECT_COLUMNS.forEach(defectType => {
                     const defectCount = parseFloat(row[defectType]) || 0;
-                    defectCounts[defectType] += defectCount;
+                    if (!defectDistribution[defectType]) {
+                        defectDistribution[defectType] = 0;
+                    }
+                    defectDistribution[defectType] += defectCount;
                 });
             });
             
-            // 전체 불량 개수 계산
-            const totalDefects = Object.values(defectCounts).reduce((sum, count) => sum + count, 0);
-            
-            // 불량 유형별 비율 계산
-            const defectRatios = {};
-            DEFECT_COLUMNS.forEach(defectType => {
-                if (totalDefects > 0) {
-                    defectRatios[defectType] = (defectCounts[defectType] / totalDefects) * 100;
-                } else {
-                    defectRatios[defectType] = 0;
-                }
-            });
-            
-            console.log('불량 유형별 개수:', defectCounts);
-            console.log('전체 불량 개수:', totalDefects);
-            console.log('불량 유형별 비율:', defectRatios);
-            
-            // 불량 유형별 데이터 정리 (비율 %)
+            // 불량 유형별 데이터 정리
             const pieData = {
                 labels: ['PROBE_DAMAGE', 'BURNT', 'PATTERN_DAMAGE', 'BUMP_DAMAGE', 'RAW_MATERIAL', 'Others'],
                 datasets: [{
                     data: [
-                        defectRatios.PROBE_DAMAGE || 0,
-                        defectRatios.BURNT || 0,
-                        defectRatios.PATTERN_DAMAGE || 0,
-                        defectRatios.BUMP_DAMAGE || 0,
-                        defectRatios.RAW_MATERIAL || 0,
-                        (defectRatios.SOLDER_BALL || 0) + (defectRatios.ETC || 0)
+                        defectDistribution.PROBE_DAMAGE || 0,
+                        defectDistribution.BURNT || 0,
+                        defectDistribution.PATTERN_DAMAGE || 0,
+                        defectDistribution.BUMP_DAMAGE || 0,
+                        defectDistribution.RAW_MATERIAL || 0,
+                        (defectDistribution.SOLDER_BALL || 0) + (defectDistribution.ETC || 0)
                     ],
                     backgroundColor: [
                         '#2E86AB',
@@ -1275,36 +1257,15 @@
                                 usePointStyle: true,
                                 font: {
                                     size: 12
-                                },
-                                generateLabels: function(chart) {
-                                    const data = chart.data;
-                                    return data.labels.map((label, index) => {
-                                        const value = data.datasets[0].data[index];
-                                        return {
-                                            text: `${label} ${value.toFixed(1)}%`,
-                                            fillStyle: data.datasets[0].backgroundColor[index],
-                                            strokeStyle: data.datasets[0].borderColor,
-                                            lineWidth: data.datasets[0].borderWidth,
-                                            hidden: false,
-                                            index: index
-                                        };
-                                    });
                                 }
                             }
                         },
                         title: {
                             display: true,
-                            text: '불량 유형별 비율 분포',
+                            text: '불량 유형 분포',
                             font: {
                                 size: 16,
                                 weight: 'bold'
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.label + ': ' + context.parsed.toFixed(1) + '%';
-                                }
                             }
                         }
                     },
