@@ -1,6 +1,13 @@
+<!-- ========================================
+     레이아웃: 메인 대시보드 (Main Dashboard)
+     목적: 불량 현황 통계 및 차트 표시
+     ======================================== -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <!-- 페이지 태그 표시 -->
+    <div style="position: fixed; top: 0; left: 0; background: #8BC34A; color: white; padding: 2px 8px; font-size: 12px; z-index: 9999; border-radius: 0 0 8px 0;">🏠 MAIN DASHBOARD</div>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>One Point System - Quality Automation Management System</title>
@@ -18,6 +25,9 @@
             color: #333;
         }
 
+        /* ========================================
+           헤더 영역 스타일 정의
+           ======================================== */
         .header {
             background: linear-gradient(135deg, #8BC34A 0%, #689F38 100%);
             color: white;
@@ -38,6 +48,9 @@
             opacity: 0.9;
         }
 
+        /* ========================================
+           메인 레이아웃 & 사이드바 영역
+           ======================================== */
         .main-layout {
             display: flex;
             min-height: calc(100vh - 120px);
@@ -165,6 +178,9 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
+        /* ========================================
+           차트 컨테이너 영역
+           ======================================== */
         .container {
             flex: 1;
             padding: 20px;
@@ -470,17 +486,36 @@
         .apply-btn:active {
             transform: translateY(0);
         }
+
+        /* ========================================
+           섹션 번호 라벨 스타일
+           ======================================== */
+        .section-label {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(139, 195, 74, 0.8);
+            color: white;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 3px;
+            z-index: 1000;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
+    <div class="header" style="position: relative;">
+        <div class="section-label">#1</div>
         <h1>One Point System</h1>
         <h2>Quality Automation Management System</h2>
     </div>
 
     <div class="main-layout">
         <!-- 좌측 네비게이션 -->
-        <div class="sidebar">
+        <div class="sidebar" style="position: relative;">
+            <div class="section-label">#2a</div>
             <div class="nav-item active" data-page="main">
                 <div class="nav-icon">
                     <svg viewBox="0 0 24 24">
@@ -532,9 +567,11 @@
         </div>
 
         <!-- 메인 컨텐츠 영역 -->
-        <div class="container">
+        <div class="container" style="position: relative;">
+            <div class="section-label">#2b</div>
             <!-- 월별 불량률 트렌드 차트 -->
-            <div class="chart-container trend-chart">
+            <div class="chart-container trend-chart" style="position: relative;">
+                <div class="section-label">#3a</div>
                 
                 <!-- Date Filter -->
                 <div class="date-filter-container">
@@ -569,7 +606,8 @@
             </div>
 
             <!-- 불량 유형 분포 파이 차트 -->
-            <div class="chart-container pie-chart">
+            <div class="chart-container pie-chart" style="position: relative;">
+                <div class="section-label">#3b</div>
                 <div class="chart-title">불량 유형 분포</div>
                 <div class="chart-canvas">
                     <canvas id="pieChart"></canvas>
@@ -577,22 +615,26 @@
             </div>
 
             <!-- 하단 Top3 발생량 상세 차트들 -->
-            <div class="bottom-charts">
-                <div class="chart-container">
+            <div class="bottom-charts" style="position: relative;">
+                <div class="section-label">#4</div>
+                <div class="chart-container" style="position: relative;">
+                    <div class="section-label">#4a</div>
                     <div class="chart-title">Burnt</div>
                     <div class="bottom-chart-canvas">
                         <canvas id="burntChart"></canvas>
                     </div>
                 </div>
                 
-                <div class="chart-container">
+                <div class="chart-container" style="position: relative;">
+                    <div class="section-label">#4b</div>
                     <div class="chart-title">Probe Damage</div>
                     <div class="bottom-chart-canvas">
                         <canvas id="probeDamageChart"></canvas>
                     </div>
                 </div>
                 
-                <div class="chart-container">
+                <div class="chart-container" style="position: relative;">
+                    <div class="section-label">#4c</div>
                     <div class="chart-title">Particle</div>
                     <div class="bottom-chart-canvas">
                         <canvas id="particleChart"></canvas>
