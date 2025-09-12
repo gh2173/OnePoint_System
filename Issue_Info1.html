@@ -1,13 +1,6 @@
-<!-- ========================================
-     레이아웃: Issue Information (이슈 정보)
-     목적: 불량 상세 정보 및 체크리스트 관리
-     ======================================== -->
 <!DOCTYPE html>
 <html lang="ko" data-theme="light">
 <head>
-    <!-- 페이지 태그 표시 -->
-    <div style="position: fixed; top: 0; left: 0; background: #007bff; color: white; padding: 2px 8px; font-size: 12px; z-index: 9999; border-radius: 0 0 8px 0;">📋 ISSUE INFO</div>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Issue Information</title>
@@ -20,9 +13,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* ========================================
-           페이지 기본 스타일 정의
-           ======================================== */
         body {
             font-family: 'Pretendard', sans-serif;
             background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
@@ -31,9 +21,6 @@
             padding: 20px;
         }
         
-        /* ========================================
-           메인 컨테이너 & 헤더 스타일
-           ======================================== */
         .main-container {
             max-width: 1600px;
             margin: 0 auto;
@@ -91,9 +78,6 @@
             padding: 20px;
         }
         
-        /* ========================================
-           테이블 & 이미지 섹션 스타일
-           ======================================== */
         .detail-table {
             width: 100%;
             border-collapse: collapse;
@@ -174,9 +158,6 @@
             border-radius: 4px;
         }
         
-        /* ========================================
-           체크박스 섹션 스타일 정의
-           ======================================== */
         .checkbox-sections {
             display: flex;
             gap: 20px;
@@ -295,36 +276,17 @@
             text-align: center;
             margin-bottom: 10px;
         }
-
-        /* ========================================
-           섹션 번호 라벨 스타일
-           ======================================== */
-        .section-label {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(0, 123, 255, 0.8);
-            color: white;
-            padding: 2px 6px;
-            font-size: 11px;
-            font-weight: bold;
-            border-radius: 3px;
-            z-index: 1000;
-            font-family: monospace;
-        }
     </style>
 </head>
 <body>
     <div class="main-container">
         <!-- Header -->
-        <div class="header" style="position: relative;">
-            <div class="section-label">#1</div>
+        <div class="header">
             Issue Information
         </div>
         
         <!-- Tabs -->
-        <div class="tabs-container" style="position: relative;">
-            <div class="section-label">#2</div>
+        <div class="tabs-container">
             <div class="tabs">
                 <div class="tab" onclick="switchTab('defect-registration')">불량현황 등록</div>
                 <div class="tab active" onclick="switchTab('issue-information')">Issue Information</div>
@@ -336,9 +298,7 @@
         <div class="content-area">
             <!-- Detail Information Table -->
             <!-- TODO: DB 연동 시 데이터 동적 로드 예정 -->
-            <div style="position: relative;">
-                <div class="section-label">#3a</div>
-                <table class="detail-table">
+            <table class="detail-table">
                 <thead>
                     <tr>
                         <th>발생 일자</th>
@@ -382,13 +342,10 @@
                     </tr>
                 </tbody>
             </table>
-            </div>
             
             <!-- Device Information Table -->
             <!-- TODO: DB 연동 시 데이터 동적 로드 예정 -->
-            <div style="position: relative;">
-                <div class="section-label">#3b</div>
-                <table class="device-info">
+            <table class="device-info">
                 <thead>
                     <tr>
                         <th>Device</th>
@@ -412,11 +369,9 @@
                     </tr>
                 </tbody>
             </table>
-            </div>
             
             <!-- Images Section -->
-            <div class="images-section" style="position: relative;">
-                <div class="section-label">#4</div>
+            <div class="images-section">
                 <!-- TODO: FTP 서버 이미지 연동 예정 -->
                 <div class="image-container">
                     <div class="image-header">&lt;UTSC51 Condition&gt;</div>
@@ -444,11 +399,9 @@
             </div>
             
             <!-- Checkbox Sections -->
-            <div class="checkbox-sections" style="position: relative;">
-                <div class="section-label">#5</div>
+            <div class="checkbox-sections">
                 <!-- 발생 패턴 Section -->
-                <div class="checkbox-section" style="position: relative;">
-                    <div class="section-label" style="background: rgba(40, 167, 69, 0.8);">#5a</div>
+                <div class="checkbox-section">
                     <div class="checkbox-header">발생 패턴</div>
                     <div class="checkbox-content">
                         <div class="checkbox-grid">
@@ -482,8 +435,7 @@
                 </div>
                 
                 <!-- Damage Section -->
-                <div class="checkbox-section" style="position: relative;">
-                    <div class="section-label" style="background: rgba(220, 53, 69, 0.8);">#5b</div>
+                <div class="checkbox-section">
                     <div class="checkbox-header">Damage</div>
                     <div class="checkbox-content">
                         <div class="checkbox-grid">
@@ -522,8 +474,7 @@
                 </div>
                 
                 <!-- Particle Section -->
-                <div class="checkbox-section particle-section" style="position: relative;">
-                    <div class="section-label" style="background: rgba(255, 193, 7, 0.8); color: #333;">#5c</div>
+                <div class="checkbox-section particle-section">
                     <div class="checkbox-header">Particle</div>
                     <div class="checkbox-content">
                         <div class="checkbox-grid">
@@ -561,8 +512,7 @@
         </div>
         
         <!-- Action Buttons -->
-        <div class="action-buttons" style="position: relative;">
-            <div class="section-label">#6</div>
+        <div class="action-buttons">
             <!-- TODO: 저장/수정 기능 구현 예정 -->
             <button class="btn btn-save" id="saveBtn" onclick="saveData()" disabled>저장</button>
             <button class="btn btn-edit" onclick="editData()">수정</button>
