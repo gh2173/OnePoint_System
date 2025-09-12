@@ -644,7 +644,6 @@
                 </div>
                 
                 <div class="chart-title">TEST 공정 기간별 불량현황 (신규구성)</div>
-                <div class="status-info">Nepes Ark OGI 불량 Status</div>
                 
                 <!-- 3개 영역으로 분할된 차트 -->
                 <div class="three-section-charts">
@@ -1871,12 +1870,35 @@
                 weekSelect.appendChild(option);
             });
             
-            // 실제 데이터에서 추출한 일 옵션 생성
+            // 실제 데이터에서 추출한 월&일 조합 옵션 생성
             console.log('실제 존재하는 일들:', availableDates.days);
-            availableDates.days.forEach(day => {
+            
+            // 실제 데이터에서 월&일 조합 추출
+            const monthDayCombinations = [];
+            excelData.forEach(row => {
+                const monthDay = `${row.month}-${row.day}`;
+                if (!monthDayCombinations.find(item => item.key === monthDay)) {
+                    monthDayCombinations.push({
+                        key: monthDay,
+                        month: row.month,
+                        day: row.day,
+                        display: `${row.month}월 ${row.day}일`
+                    });
+                }
+            });
+            
+            // 월, 일 순으로 정렬
+            monthDayCombinations.sort((a, b) => {
+                if (a.month !== b.month) return a.month - b.month;
+                return a.day - b.day;
+            });
+            
+            console.log('추출된 월&일 조합:', monthDayCombinations);
+            
+            monthDayCombinations.forEach(combo => {
                 const option = document.createElement('option');
-                option.value = day;
-                option.textContent = `${day}일`;
+                option.value = combo.key; // "6-15" 형태
+                option.textContent = combo.display; // "6월 15일" 형태
                 daySelect.appendChild(option);
             });
             
@@ -1898,7 +1920,7 @@
                 const middleIndex = Math.floor(availableDates.months.length / 2);
                 const selectedMonth = availableDates.months[middleIndex];
                 document.getElementById('monthFilter').value = selectedMonth;
-                handleSingleSelection('month', selectedMonth);
+                handleConsecutiveSelection('month', selectedMonth);
                 console.log('기본 월 설정:', selectedMonth);
             }
             
@@ -1907,49 +1929,125 @@
                 const middleIndex = Math.floor(availableDates.weeks.length / 2);
                 const selectedWeek = availableDates.weeks[middleIndex];
                 document.getElementById('weekFilter').value = selectedWeek;
-                handleSingleSelection('week', selectedWeek);
+                handleConsecutiveSelection('week', selectedWeek);
                 console.log('기본 주 설정:', selectedWeek);
             }
             
-            // 실제 데이터에 있는 일 사용
-            if (availableDates.days.length > 0) {
-                const middleIndex = Math.floor(availableDates.days.length / 2);
-                const selectedDay = availableDates.days[middleIndex];
-                document.getElementById('dayFilter').value = selectedDay;
-                handleSingleSelection('day', selectedDay);
-                console.log('기본 일 설정:', selectedDay);
+            // 실제 데이터에 있는 월&일 조합 사용
+            const daySelect = document.getElementById('dayFilter');
+            if (daySelect.options.length > 1) { // '선택' 옵션 제외
+                const middleIndex = Math.floor((daySelect.options.length - 1) / 2) + 1; // '선택' 옵션 고려
+                const selectedMonthDay = daySelect.options[middleIndex].value;
+                daySelect.value = selectedMonthDay;
+                handleConsecutiveSelection('day', selectedMonthDay);
+                console.log('기본 월&일 설정:', selectedMonthDay);
             }
             
             console.log('설정된 기본 필터:', currentFilters);
         }
         
-        // 단일 값 선택 처리 (단순화된 필터링)
-        function handleSingleSelection(type, selectedValue) {
+        // 연속된 값 선택 처리 (일: 5개, 월/주: 3개)
+        function handleConsecutiveSelection(type, selectedValue) {
             const value = parseInt(selectedValue);
-            let filterKey;
+            let availableValues, filterKey, targetCount;
             
             switch(type) {
                 case 'month':
+                    availableValues = availableDates.months;
                     filterKey = 'selectedMonths';
+                    targetCount = 3; // 월은 3개
                     break;
                 case 'week':
+                    availableValues = availableDates.weeks;
                     filterKey = 'selectedWeeks';
+                    targetCount = 3; // 주는 3개
                     break;
                 case 'day':
+                    availableValues = availableDates.days;
                     filterKey = 'selectedDays';
+                    targetCount = 5; // 일은 5개
                     break;
             }
             
-            // 선택된 단일 값만 설정 (단순화)
-            currentFilters[filterKey] = [value];
-            console.log(`${type} 필터 설정:`, selectedValue, '→', [value]);
+            if (!availableValues || availableValues.length === 0) {
+                console.log(`${type} 사용 가능한 데이터 없음`);
+                currentFilters[filterKey] = [];
+                return;
+            }
+            
+            const currentIndex = availableValues.indexOf(value);
+            if (currentIndex === -1) {
+                console.log(`${type} 값 ${value}를 찾을 수 없음`);
+                currentFilters[filterKey] = [];
+                return;
+            }
+            
+            const consecutiveValues = [];
+            
+            if (targetCount === 3) {
+                // 월/주: 기존 3개 로직 (이전1 + 현재 + 다음1)
+                if (currentIndex > 0) {
+                    consecutiveValues.push(availableValues[currentIndex - 1]);
+                }
+                consecutiveValues.push(value);
+                if (currentIndex < availableValues.length - 1) {
+                    consecutiveValues.push(availableValues[currentIndex + 1]);
+                }
+                
+                // 3개가 안 되면 앞/뒤에서 더 추가
+                if (consecutiveValues.length < 3) {
+                    if (currentIndex > 1 && consecutiveValues.length < 3) {
+                        consecutiveValues.unshift(availableValues[currentIndex - 2]);
+                    }
+                    if (currentIndex < availableValues.length - 2 && consecutiveValues.length < 3) {
+                        consecutiveValues.push(availableValues[currentIndex + 2]);
+                    }
+                }
+            } else if (targetCount === 5) {
+                // 일: 5개 로직 - 월&일 조합으로 처리
+                // selectedValue는 "6-15" 형태
+                const [selectedMonth, selectedDay] = selectedValue.split('-').map(Number);
+                
+                if (!selectedMonth || !selectedDay) {
+                    console.log(`잘못된 월&일 형식: ${selectedValue}`);
+                    currentFilters[filterKey] = [];
+                    return;
+                }
+                
+                console.log(`선택된 월&일: ${selectedMonth}월 ${selectedDay}일`);
+                
+                // 같은 월의 일들만 필터링
+                const sameMonthDays = excelData
+                    .filter(row => row.month === selectedMonth)
+                    .map(row => row.day)
+                    .filter((day, index, arr) => arr.indexOf(day) === index) // 중복 제거
+                    .sort((a, b) => a - b);
+                
+                console.log(`${selectedMonth}월의 사용 가능한 일들:`, sameMonthDays);
+                
+                const dayIndex = sameMonthDays.indexOf(selectedDay);
+                if (dayIndex === -1) {
+                    consecutiveValues.push(selectedDay);
+                } else {
+                    // 현재 일을 중심으로 앞뒤 2개씩
+                    for (let i = Math.max(0, dayIndex - 2); i <= Math.min(sameMonthDays.length - 1, dayIndex + 2); i++) {
+                        consecutiveValues.push(sameMonthDays[i]);
+                    }
+                }
+                
+                // 월&일 조합으로 저장 (집계에서 사용)
+                currentFilters.selectedDayMonth = selectedMonth;
+            }
+            
+            currentFilters[filterKey] = consecutiveValues;
+            console.log(`${type} 연속된 ${targetCount}개 값 선택:`, selectedValue, '→', consecutiveValues);
         }
         
         // 필터 이벤트 리스너 설정
         function setupFilterEventListeners() {
             document.getElementById('monthFilter').addEventListener('change', function() {
                 if (this.value) {
-                    handleSingleSelection('month', this.value);
+                    handleConsecutiveSelection('month', this.value);
                     createMonthlyChart(); // 월별 차트만 업데이트
                 } else {
                     // 선택 해제 시 필터 비우기
@@ -1960,7 +2058,7 @@
             
             document.getElementById('weekFilter').addEventListener('change', function() {
                 if (this.value) {
-                    handleSingleSelection('week', this.value);
+                    handleConsecutiveSelection('week', this.value);
                     createWeeklyChart(); // 주별 차트만 업데이트
                 } else {
                     currentFilters.selectedWeeks = [];
@@ -1970,10 +2068,12 @@
             
             document.getElementById('dayFilter').addEventListener('change', function() {
                 if (this.value) {
-                    handleSingleSelection('day', this.value);
+                    handleConsecutiveSelection('day', this.value);
                     createDailyChart(); // 일별 차트만 업데이트
                 } else {
+                    // 선택 해제 시 일 필터와 월 정보 모두 초기화
                     currentFilters.selectedDays = [];
+                    currentFilters.selectedDayMonth = null;
                     createDailyChart(); // 전체 데이터로 차트 업데이트
                 }
             });
@@ -1991,19 +2091,12 @@
             createDailyChart();
         }
 
-        // 월별 차트 (월 필터 적용)
+        // 월별 차트 (월 필터 적용 - 연속된 3개 값)
         function createMonthlyChart() {
             const ctx = document.getElementById('monthlyChart').getContext('2d');
-            const { selectedMonths } = currentFilters;
             
-            // 월 필터가 선택되었을 때만 해당 데이터 표시
-            let filteredData = excelData;
-            if (selectedMonths.length > 0) {
-                filteredData = excelData.filter(row => selectedMonths.includes(row.month));
-                console.log('월별 필터 적용된 데이터:', filteredData.length, '건, 선택된 월:', selectedMonths);
-            }
-            
-            const monthlyData = aggregateByMonth(filteredData);
+            // 전체 데이터 사용 (필터링은 aggregateByMonth에서 처리)
+            const monthlyData = aggregateByMonth(excelData);
             
             if (charts.monthlyChart) {
                 charts.monthlyChart.destroy();
@@ -2015,23 +2108,18 @@
                     labels: monthlyData.periods,
                     datasets: monthlyData.datasets
                 },
-                options: getStackedBarOptions('월', '불량율 (%)')
+                options: getStackedBarOptions('월', '불량율 (%)', monthlyData.emptyPeriods)
             });
+            
+            console.log('월별 차트 생성 완료 - 기간:', monthlyData.periods, '빈 데이터:', monthlyData.emptyPeriods);
         }
 
-        // 주별 차트 (주 필터 적용)
+        // 주별 차트 (주 필터 적용 - 연속된 3개 값)
         function createWeeklyChart() {
             const ctx = document.getElementById('weeklyChart').getContext('2d');
-            const { selectedWeeks } = currentFilters;
             
-            // 주 필터가 선택되었을 때만 해당 데이터 표시
-            let filteredData = excelData;
-            if (selectedWeeks.length > 0) {
-                filteredData = excelData.filter(row => selectedWeeks.includes(row.week));
-                console.log('주별 필터 적용된 데이터:', filteredData.length, '건, 선택된 주:', selectedWeeks);
-            }
-            
-            const weeklyData = aggregateByWeek(filteredData);
+            // 전체 데이터 사용 (필터링은 aggregateByWeek에서 처리)
+            const weeklyData = aggregateByWeek(excelData);
             
             if (charts.weeklyChart) {
                 charts.weeklyChart.destroy();
@@ -2043,23 +2131,18 @@
                     labels: weeklyData.periods,
                     datasets: weeklyData.datasets
                 },
-                options: getStackedBarOptions('주', '불량율 (%)')
+                options: getStackedBarOptions('주', '불량율 (%)', weeklyData.emptyPeriods)
             });
+            
+            console.log('주별 차트 생성 완료 - 기간:', weeklyData.periods, '빈 데이터:', weeklyData.emptyPeriods);
         }
 
-        // 일별 차트 (일 필터 적용)
+        // 일별 차트 (일 필터 적용 - 연속된 3개 값)
         function createDailyChart() {
             const ctx = document.getElementById('dailyChart').getContext('2d');
-            const { selectedDays } = currentFilters;
             
-            // 일 필터가 선택되었을 때만 해당 데이터 표시
-            let filteredData = excelData;
-            if (selectedDays.length > 0) {
-                filteredData = excelData.filter(row => selectedDays.includes(row.day));
-                console.log('일별 필터 적용된 데이터:', filteredData.length, '건, 선택된 일:', selectedDays);
-            }
-            
-            const dailyData = aggregateByDay(filteredData);
+            // 전체 데이터 사용 (필터링은 aggregateByDay에서 처리)
+            const dailyData = aggregateByDay(excelData);
             
             if (charts.dailyChart) {
                 charts.dailyChart.destroy();
@@ -2071,64 +2154,111 @@
                     labels: dailyData.periods,
                     datasets: dailyData.datasets
                 },
-                options: getStackedBarOptions('일', '불량율 (%)')
+                options: getStackedBarOptions('일', '불량율 (%)', dailyData.emptyPeriods)
             });
+            
+            console.log('일별 차트 생성 완료 - 기간:', dailyData.periods, '빈 데이터:', dailyData.emptyPeriods);
         }
 
-        // 월별 데이터 집계
+        // 월별 데이터 집계 (연속된 3개 값 처리)
         function aggregateByMonth(data) {
+            const { selectedMonths } = currentFilters;
             const monthlyGroups = {};
             
-            data.forEach(row => {
-                const monthKey = row.month + '월';
-                if (!monthlyGroups[monthKey]) {
-                    monthlyGroups[monthKey] = [];
-                }
-                monthlyGroups[monthKey].push(row);
-            });
+            // 선택된 연속된 월들을 기준으로 그룹 생성
+            if (selectedMonths.length > 0) {
+                // 연속된 월들에 대해 데이터 그룹화
+                selectedMonths.forEach(month => {
+                    const monthKey = month + '월';
+                    monthlyGroups[monthKey] = data.filter(row => row.month === month);
+                });
+            } else {
+                // 필터가 없으면 전체 데이터 그룹화
+                data.forEach(row => {
+                    const monthKey = row.month + '월';
+                    if (!monthlyGroups[monthKey]) {
+                        monthlyGroups[monthKey] = [];
+                    }
+                    monthlyGroups[monthKey].push(row);
+                });
+            }
             
-            return createStackedBarData(monthlyGroups);
+            return createStackedBarDataWithEmptyHandling(monthlyGroups, '월');
         }
 
-        // 주별 데이터 집계
+        // 주별 데이터 집계 (연속된 3개 값 처리)
         function aggregateByWeek(data) {
+            const { selectedWeeks } = currentFilters;
             const weeklyGroups = {};
             
-            data.forEach(row => {
-                const weekKey = row.week + '주';
-                if (!weeklyGroups[weekKey]) {
-                    weeklyGroups[weekKey] = [];
-                }
-                weeklyGroups[weekKey].push(row);
-            });
+            // 선택된 연속된 주들을 기준으로 그룹 생성
+            if (selectedWeeks.length > 0) {
+                selectedWeeks.forEach(week => {
+                    const weekKey = week + '주';
+                    weeklyGroups[weekKey] = data.filter(row => row.week === week);
+                });
+            } else {
+                // 필터가 없으면 전체 데이터 그룹화
+                data.forEach(row => {
+                    const weekKey = row.week + '주';
+                    if (!weeklyGroups[weekKey]) {
+                        weeklyGroups[weekKey] = [];
+                    }
+                    weeklyGroups[weekKey].push(row);
+                });
+            }
             
-            return createStackedBarData(weeklyGroups);
+            return createStackedBarDataWithEmptyHandling(weeklyGroups, '주');
         }
 
-        // 일별 데이터 집계
+        // 일별 데이터 집계 (연속된 3개 값 처리)
         function aggregateByDay(data) {
+            const { selectedDays, selectedDayMonth } = currentFilters;
             const dailyGroups = {};
             
-            data.forEach(row => {
-                const dayKey = row.day + '일';
-                if (!dailyGroups[dayKey]) {
-                    dailyGroups[dayKey] = [];
-                }
-                dailyGroups[dayKey].push(row);
-            });
+            // 선택된 연속된 일들을 기준으로 그룹 생성 (월&일 조건)
+            if (selectedDays.length > 0 && selectedDayMonth) {
+                selectedDays.forEach(day => {
+                    const dayKey = `${selectedDayMonth}월 ${day}일`;
+                    // 같은 월&일 조건으로 필터링
+                    dailyGroups[dayKey] = data.filter(row => 
+                        row.month === selectedDayMonth && row.day === day
+                    );
+                });
+            } else {
+                // 필터가 없으면 전체 데이터 그룹화 (월&일 표시)
+                data.forEach(row => {
+                    const dayKey = `${row.month}월 ${row.day}일`;
+                    if (!dailyGroups[dayKey]) {
+                        dailyGroups[dayKey] = [];
+                    }
+                    dailyGroups[dayKey].push(row);
+                });
+            }
             
-            return createStackedBarData(dailyGroups);
+            return createStackedBarDataWithEmptyHandling(dailyGroups, '일');
         }
 
-        // 누적막대차트 데이터 생성
-        function createStackedBarData(groupedData) {
-            const periods = Object.keys(groupedData).sort();
+        // 빈 데이터 처리가 포함된 누적막대차트 데이터 생성
+        function createStackedBarDataWithEmptyHandling(groupedData, unit) {
+            const periods = Object.keys(groupedData).sort((a, b) => {
+                // 숫자 순으로 정렬
+                const aNum = parseInt(a.replace(unit, ''));
+                const bNum = parseInt(b.replace(unit, ''));
+                return aNum - bNum;
+            });
+            
             const defectTypes = ['PROBE_DAMAGE', 'BURNT', 'PATTERN_DAMAGE', 'BUMP_DAMAGE', 'RAW_MATERIAL'];
             const datasets = [];
             
             defectTypes.forEach(defectType => {
                 const chartData = periods.map(period => {
                     const periodRows = groupedData[period];
+                    
+                    // 데이터가 없는 경우
+                    if (!periodRows || periodRows.length === 0) {
+                        return 0; // 차트에서는 0으로 표시
+                    }
                     
                     // 해당 기간의 모든 인스턴스에서 불량율 계산
                     const defectRates = periodRows.map(row => {
@@ -2151,11 +2281,21 @@
                 });
             });
             
-            return { periods, datasets };
+            // 빈 데이터에 대한 정보 추가
+            const emptyPeriods = periods.filter(period => 
+                !groupedData[period] || groupedData[period].length === 0
+            );
+            
+            return { periods, datasets, emptyPeriods };
         }
 
-        // 누적막대차트 공통 옵션
-        function getStackedBarOptions(xAxisLabel, yAxisLabel) {
+        // 기존 함수 유지 (다른 곳에서 사용할 수 있음)
+        function createStackedBarData(groupedData) {
+            return createStackedBarDataWithEmptyHandling(groupedData, '');
+        }
+
+        // 누적막대차트 공통 옵션 (빈 데이터 처리 포함)
+        function getStackedBarOptions(xAxisLabel, yAxisLabel, emptyPeriods = []) {
             return {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -2168,7 +2308,15 @@
                             font: { size: 10, weight: 'bold' }
                         },
                         ticks: {
-                            font: { size: 9 }
+                            font: { size: 9 },
+                            callback: function(value, index) {
+                                const label = this.getLabelForValue(value);
+                                // 빈 데이터인 경우 표시 변경
+                                if (emptyPeriods.includes(label)) {
+                                    return label + '*';
+                                }
+                                return label;
+                            }
                         },
                         grid: { display: false }
                     },
@@ -2197,7 +2345,18 @@
                         mode: 'index',
                         intersect: false,
                         callbacks: {
+                            beforeLabel: function(context) {
+                                const label = context.label;
+                                if (emptyPeriods.includes(label)) {
+                                    return '⚠️ 데이터 없음';
+                                }
+                                return null;
+                            },
                             label: function(context) {
+                                const label = context.label;
+                                if (emptyPeriods.includes(label)) {
+                                    return '데이터가 없습니다';
+                                }
                                 return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
                             }
                         }
